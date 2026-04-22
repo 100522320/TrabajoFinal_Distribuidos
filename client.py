@@ -1,5 +1,6 @@
 from enum import Enum
 import argparse
+import socket
 
 class client :
 
@@ -14,6 +15,19 @@ class client :
     # ****************** ATTRIBUTES ******************
     _server = None
     _port = -1
+    _nombre = None  # Sirve para recordar el nombre del usuario actual
+
+    # Funcion auxiliar para leer toda la cadena hasta encontrar un \0
+    @staticmethod
+    def leer_cadena(socket_conexion):
+        buffer = b''
+        while True:
+            byte = socket_conexion.recv(1)
+            if byte == b'\0':
+                break
+            buffer += byte
+            
+        return buffer.decode('utf-8')
 
     # ******************** METHODS *******************
     # *
@@ -24,8 +38,46 @@ class client :
     # * @return ERROR if another error occurred
     @staticmethod
     def  register(user) :
-        #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Se conecta al servidor
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((client._server, client._port))
+
+            # Se envía la cadena "REGISTER" indicando la operación
+            op = "REGISTER\0"
+            sock.sendall(op.encode('utf-8'))
+
+            # Se envía el nombre del usuario
+            nombre_usuario = f"{user}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Se recibe el resultado (un byte) 
+            resultado = sock.recv(1)
+
+            # Cierra la conexión
+            sock.close()
+
+            # Comprobamos el resultado
+            if not resultado:
+                print("c> REGISTER FAIL")
+                return client.RC.ERROR
+            
+            resultado = resultado[0]
+            
+            match resultado:
+                case 0:
+                    print("c> REGISTER OK")
+                    return client.RC.OK
+                case 1:
+                    print("c> USERNAME IN USE")
+                    return client.RC.USER_ERROR
+                case _:
+                    print("c> REGISTER FAIL")
+                    return client.RC.ERROR
+                
+        except Exception as e:
+            print("c> REGISTER FAIL\n")
+            return client.RC.ERROR
 
     # *
     # 	 * @param user - User name to unregister from the system
@@ -35,8 +87,46 @@ class client :
     # 	 * @return ERROR if another error occurred
     @staticmethod
     def  unregister(user) :
-        #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Se conecta al servidor
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((client._server, client._port))
+
+            # Se envía la cadena "UNREGISTER" indicando la operación
+            op = "UNREGISTER\0"
+            sock.sendall(op.encode('utf-8'))
+
+            # Se envía el nombre del usuario
+            nombre_usuario = f"{user}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Se recibe el resultado (un byte) 
+            resultado = sock.recv(1)
+
+            # Cierra la conexión
+            sock.close()
+
+            # Comprobamos el resultado
+            if not resultado:
+                print("c> UNREGISTER FAIL")
+                return client.RC.ERROR
+            
+            resultado = resultado[0]
+            
+            match resultado:
+                case 0:
+                    print("c> UNREGISTER OK")
+                    return client.RC.OK
+                case 1:
+                    print("c> USER DOES NOT EXIST")
+                    return client.RC.USER_ERROR
+                case _:
+                    print("c> UNREGISTER FAIL")
+                    return client.RC.ERROR
+                
+        except Exception as e:
+            print("c> UNREGISTER FAIL\n")
+            return client.RC.ERROR
 
 
     # *
@@ -57,8 +147,56 @@ class client :
     # * @return ERROR if another error occurred
     @staticmethod
     def  users() :
-        #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Se conecta al servidor
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((client._server, client._port))
+
+            # Se envía la cadena "USERS" indicando la operación
+            op = "USERS\0"
+            sock.sendall(op.encode('utf-8'))
+
+            # Se envía el nombre del usuario
+            nombre_usuario = f"{client._nombre}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Se recibe el resultado (un byte) 
+            resultado = sock.recv(1)
+
+            # Comprobamos el resultado
+            if not resultado:
+                print("c> UNREGISTER FAIL")
+                sock.close()
+                return client.RC.ERROR
+            
+            resultado = resultado[0]
+            
+            match resultado:
+                case 0:
+                    # Leemos el numero de clientes conectados y lo imprimimos
+                    num_str = client.leer_cadena(sock)
+                    num_users = int(num_str)
+                    print(f"c> CONNECTED USERS ({num_users} users connected) OK")
+
+                    # Leemos el nombre de cada cliente conectado y los vamos imprimiendo
+                    for i in range(num_users):
+                        cliente = client.leer_cadena(sock)
+                        print(f"\t{cliente}\n")
+
+                    return client.RC.OK
+                case 1:
+                    print("c> CONNECTED USERS FAIL, USER IS NOT CONNECTED")
+                    return client.RC.USER_ERROR
+                case _:
+                    print("c> CONNECTED USERS FAIL")
+                    return client.RC.ERROR
+            
+            # Cierra la conexión
+            sock.close()
+                
+        except Exception as e:
+            print("c> UNREGISTER FAIL\n")
+            return client.RC.ERROR
 
 
 
