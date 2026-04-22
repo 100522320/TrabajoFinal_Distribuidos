@@ -59,20 +59,20 @@ class client :
 
             # Comprobamos el resultado
             if not resultado:
-                print("c> REGISTER FAIL")
+                print("c> REGISTER FAIL\n")
                 return client.RC.ERROR
             
             resultado = resultado[0]
             
             match resultado:
                 case 0:
-                    print("c> REGISTER OK")
+                    print("c> REGISTER OK\n")
                     return client.RC.OK
                 case 1:
-                    print("c> USERNAME IN USE")
+                    print("c> USERNAME IN USE\n")
                     return client.RC.USER_ERROR
                 case _:
-                    print("c> REGISTER FAIL")
+                    print("c> REGISTER FAIL\n")
                     return client.RC.ERROR
                 
         except Exception as e:
@@ -108,20 +108,20 @@ class client :
 
             # Comprobamos el resultado
             if not resultado:
-                print("c> UNREGISTER FAIL")
+                print("c> UNREGISTER FAIL\n")
                 return client.RC.ERROR
             
             resultado = resultado[0]
             
             match resultado:
                 case 0:
-                    print("c> UNREGISTER OK")
+                    print("c> UNREGISTER OK\n")
                     return client.RC.OK
                 case 1:
-                    print("c> USER DOES NOT EXIST")
+                    print("c> USER DOES NOT EXIST\n")
                     return client.RC.USER_ERROR
                 case _:
-                    print("c> UNREGISTER FAIL")
+                    print("c> UNREGISTER FAIL\n")
                     return client.RC.ERROR
                 
         except Exception as e:
@@ -147,6 +147,11 @@ class client :
     # * @return ERROR if another error occurred
     @staticmethod
     def  users() :
+        # Comprobamos que este conectado ya que sino client._nombre será None y fallará
+        if client._nombre is None:
+            print("c> CONNECTED USERS FAIL, USER IS NOT CONNECTED\n")
+            return client.RC.USER_ERROR
+        
         try:
             # Se conecta al servidor
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -165,7 +170,7 @@ class client :
 
             # Comprobamos el resultado
             if not resultado:
-                print("c> UNREGISTER FAIL")
+                print("c> CONNECTED USERS FAIL\n")
                 sock.close()
                 return client.RC.ERROR
             
@@ -181,21 +186,21 @@ class client :
                     # Leemos el nombre de cada cliente conectado y los vamos imprimiendo
                     for i in range(num_users):
                         cliente = client.leer_cadena(sock)
-                        print(f"\t{cliente}\n")
+                        print(f"{cliente}")
 
                     return client.RC.OK
                 case 1:
-                    print("c> CONNECTED USERS FAIL, USER IS NOT CONNECTED")
+                    print("c> CONNECTED USERS FAIL, USER IS NOT CONNECTED\n")
                     return client.RC.USER_ERROR
                 case _:
-                    print("c> CONNECTED USERS FAIL")
+                    print("c> CONNECTED USERS FAIL\n")
                     return client.RC.ERROR
             
             # Cierra la conexión
             sock.close()
                 
         except Exception as e:
-            print("c> UNREGISTER FAIL\n")
+            print("c> CONNECTED USERS FAIL\n")
             return client.RC.ERROR
 
 
@@ -330,8 +335,8 @@ class client :
             parser.error("Error: Port must be in the range 1024 <= port <= 65535");
             return False;
         
-        _server = args.s
-        _port = args.p
+        client._server = args.s
+        client._port = args.p
 
         return True
 
