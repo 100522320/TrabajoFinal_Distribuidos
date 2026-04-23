@@ -140,9 +140,19 @@ class client :
             try:
                 # Esperamos a que el servidor se conecte a nosotros para darnos un mensaje
                 conn, addr = listen_sock.accept()
-                
-                # ¡Aquí usaremos client.leer_cadena() más adelante para leer el mensaje!
-                # De momento lo cerramos para que no se cuelgue.
+                # Recibimos todos los datos
+                op = client.leer_cadena(conn)
+                if (op == "SEND_MESSAGE"):
+                    usuario_original = client.leer_cadena(conn)
+                    id_str = client.leer_cadena(conn)
+                    mensaje = client.leer_cadena(conn)
+                        
+                    # Imprimimos el mensaje
+                    print(f"s> MESSAGE {id_str} FROM {usuario_original}")
+                    print(f"{mensaje}")
+                    print("END\n")
+                    
+                # Cerramos la conexión de este mensaje concreto
                 conn.close()
             except Exception as e:
                 break
@@ -333,13 +343,13 @@ class client :
                     print("c> DISCONNECT OK\n")
                     return client.RC.OK
                 case 1:
-                    print("c> DISCONNECT FAIL, USER DOES NOT EXIST")
+                    print("c> DISCONNECT FAIL, USER DOES NOT EXIST\n")
                     return client.RC.USER_ERROR
                 case 2:
-                    print("c> DISCONNECT FAIL, USER NOT CONNECTED")
+                    print("c> DISCONNECT FAIL, USER NOT CONNECTED\n")
                     return client.RC.USER_ERROR
                 case _:
-                    print("c> DISCONNECT FAIL")
+                    print("c> DISCONNECT FAIL\n")
                     return client.RC.ERROR
                 
         except Exception as e:
@@ -347,7 +357,7 @@ class client :
                 client._listen_sock.close()
                 client._listen_sock = None
             client._nombre = None
-            print("c> DISCONNECT FAIL")
+            print("c> DISCONNECT FAIL\n")
             return client.RC.ERROR
 
     # *
@@ -361,12 +371,12 @@ class client :
     def  send(user,  message) :
         # Comprobamos que este conectado ya que sino client._nombre será None y fallará
         if client._nombre is None:
-            print("c> SEND FAIL")
+            print("c> SEND FAIL\n")
             return client.RC.ERROR
 
         # Máximo 255 caracteres, ya que el '\0' final suma 1 byte para llegar a los 256 
         if len(message) > 255:
-            print("c> SEND FAIL")  # El protocolo no especifica un error especial, así que usamos el general
+            print("c> SEND FAIL\n")  # El protocolo no especifica un error especial, así que usamos el general
             return client.RC.ERROR
 
         try:
@@ -397,7 +407,7 @@ class client :
             if not resultado:
                 # Cierra la conexión
                 sock.close()
-                print("c> DISCONNECT FAIL\n")
+                print("c> SEND FAIL\n")
                 return client.RC.ERROR
             
             resultado = resultado[0]
@@ -406,22 +416,22 @@ class client :
                 case 0:
                     # Si es éxito, el servidor nos manda el ID del mensaje como cadena
                     mensaje_id = client.leer_cadena(sock)
-                    print(f"c> SEND OK - MESSAGE {mensaje_id}")
+                    print(f"c> SEND OK - MESSAGE {mensaje_id}\n")
                     sock.close()
                     return client.RC.OK
                 case 1:
                     # Cierra la conexión
                     sock.close()
-                    print("c> SEND FAIL, USER DOES NOT EXIST")
+                    print("c> SEND FAIL, USER DOES NOT EXIST\n")
                     return client.RC.USER_ERROR
                 case _:
                     # Cierra la conexión
                     sock.close()
-                    print("c> SEND FAIL")
+                    print("c> SEND FAIL\n")
                     return client.RC.ERROR
                 
         except Exception as e:
-            print("c> SEND FAIL")
+            print("c> SEND FAIL\n")
             return client.RC.ERROR
 
     # *
