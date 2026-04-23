@@ -17,6 +17,7 @@ class client :
     _server = None
     _port = -1
     _nombre = None  # Sirve para recordar el nombre del usuario actual
+    _listen_sock = None  # < Para poder cerrar el hilo después
 
     # Funcion auxiliar para leer toda la cadena hasta encontrar un \0
     @staticmethod
@@ -157,16 +158,16 @@ class client :
     def  connect(user) :
         try:
             # Creamos un socket de escucha
-            listen_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.listen_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # Al poner el puerto a 0, el Sistema Operativo nos asigna uno libre automáticamente
-            listen_sock.bind(('0.0.0.0', 0))
+            client.listen_sock.bind(('0.0.0.0', 0))
             # Obtenemos cuál es ese puerto que nos han asignado
-            mi_puerto_escucha = listen_sock.getsockname()[1]
+            mi_puerto_escucha = client.listen_sock.getsockname()[1]
             # Ponemos el socket en modo "escucha"
-            listen_sock.listen(5)
+            client.listen_sock.listen(5)
 
             # Creamos el hilo pasándole nuestro socket de escucha
-            hilo = threading.Thread(target=client.hilo_escucha, args=(listen_sock,))
+            hilo = threading.Thread(target=client.hilo_escucha, args=(client.listen_sock,))
             # daemon=True hace que el hilo se cierre automáticamente si salimos del programa
             hilo.daemon = True 
             hilo.start()
@@ -294,8 +295,60 @@ class client :
     # * @return ERROR if another error occurred
     @staticmethod
     def  disconnect(user) :
-        #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Se conecta al servidor
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((client._server, client._port))
+
+            # Se envía la cadena "DISCONNECT" indicando la operación
+            op = "DISCONNECT\0"
+            sock.sendall(op.encode('utf-8'))
+
+            # Se envía el nombre del usuario
+            nombre_usuario = f"{user}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Se recibe el resultado (un byte) 
+            resultado = sock.recv(1)
+
+            # Cierra la conexión
+            sock.close()
+
+            # Se debe parar siempre
+            if client._listen_sock is not None:
+                client._listen_sock.close() # Esto destraba el .accept() del hilo y lo cierra
+                client._listen_sock = None
+                
+            client._nombre = None # Limpiamos el usuario actual
+
+            # Comprobamos el resultado
+            if not resultado:
+                print("c> DISCONNECT FAIL\n")
+                return client.RC.ERROR
+            
+            resultado = resultado[0]
+            
+            match resultado:
+                case 0:
+                    print("c> DISCONNECT OK\n")
+                    return client.RC.OK
+                case 1:
+                    print("c> DISCONNECT FAIL, USER DOES NOT EXIST")
+                    return client.RC.USER_ERROR
+                case 2:
+                    print("c> DISCONNECT FAIL, USER NOT CONNECTED")
+                    return client.RC.USER_ERROR
+                case _:
+                    print("c> DISCONNECT FAIL")
+                    return client.RC.ERROR
+                
+        except Exception as e:
+            if client._listen_sock is not None:
+                client._listen_sock.close()
+                client._listen_sock = None
+            client._nombre = None
+            print("c> DISCONNECT FAIL")
+            return client.RC.ERROR
 
     # *
     # * @param user    - Receiver user name
