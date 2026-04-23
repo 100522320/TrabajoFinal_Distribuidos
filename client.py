@@ -1,6 +1,7 @@
 from enum import Enum
 import argparse
 import socket
+import threading
 
 class client :
 
@@ -127,6 +128,23 @@ class client :
         except Exception as e:
             print("c> UNREGISTER FAIL\n")
             return client.RC.ERROR
+        
+    @staticmethod
+    def hilo_escucha(listen_sock):
+        """
+        Este hilo se ejecutará en segundo plano. 
+        Su trabajo es aceptar conexiones del servidor y recibir mensajes.
+        """
+        while True:
+            try:
+                # Esperamos a que el servidor se conecte a nosotros para darnos un mensaje
+                conn, addr = listen_sock.accept()
+                
+                # ¡Aquí usaremos client.leer_cadena() más adelante para leer el mensaje!
+                # De momento lo cerramos para que no se cuelgue.
+                conn.close()
+            except Exception as e:
+                break
 
 
     # *
@@ -137,8 +155,71 @@ class client :
     # * @return ERROR if another error occurred
     @staticmethod
     def  connect(user) :
-        #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Creamos un socket de escucha
+            listen_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # Al poner el puerto a 0, el Sistema Operativo nos asigna uno libre automáticamente
+            listen_sock.bind(('0.0.0.0', 0))
+            # Obtenemos cuál es ese puerto que nos han asignado
+            mi_puerto_escucha = listen_sock.getsockname()[1]
+            # Ponemos el socket en modo "escucha"
+            listen_sock.listen(5)
+
+            # Creamos el hilo pasándole nuestro socket de escucha
+            hilo = threading.Thread(target=client.hilo_escucha, args=(listen_sock,))
+            # daemon=True hace que el hilo se cierre automáticamente si salimos del programa
+            hilo.daemon = True 
+            hilo.start()
+
+            # Se conecta al servidor
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((client._server, client._port))
+
+            # Se envía la cadena "CONNECT" indicando la operación
+            op = "CONNECT\0"
+            sock.sendall(op.encode('utf-8'))
+
+            # Se envía el nombre del usuario
+            nombre_usuario = f"{user}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Le mandamos al servidor el puerto
+            puerto_str = f"{mi_puerto_escucha}\0"
+            sock.sendall(puerto_str.encode('utf-8')) 
+
+            # Se recibe el resultado (un byte) 
+            resultado = sock.recv(1)
+
+            # Cierra la conexión
+            sock.close()
+
+            # Comprobamos el resultado
+            if not resultado:
+                print("c> CONNECT FAIL\n")
+                return client.RC.ERROR
+            
+            resultado = resultado[0]
+            
+            match resultado:
+                case 0:
+                    # Guardamos quién somos para que USERS funcione después
+                    client._nombre = user
+                    print("c> CONNECT OK\n")
+                    return client.RC.OK
+                case 1:
+                    print("c> CONNECT FAIL, USER DOES NOT EXIST\n")
+                    return client.RC.USER_ERROR
+                case 2:
+                    print("c> USER ALREADY CONNECTED\n")
+                    return client.RC.USER_ERROR
+                case _:
+                    print("c> CONNECT FAIL\n")
+                    return client.RC.ERROR
+                
+        except Exception as e:
+            print("c> CONNECT FAIL\n")
+            return client.RC.ERROR
+
 
     # *
     # * 
