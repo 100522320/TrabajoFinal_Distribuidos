@@ -359,8 +359,70 @@ class client :
     # * @return ERROR the user does not exist or another error occurred
     @staticmethod
     def  send(user,  message) :
-        #  Write your code here
-        return client.RC.ERROR
+        # Comprobamos que este conectado ya que sino client._nombre será None y fallará
+        if client._nombre is None:
+            print("c> SEND FAIL")
+            return client.RC.ERROR
+
+        # Máximo 255 caracteres, ya que el '\0' final suma 1 byte para llegar a los 256 
+        if len(message) > 255:
+            print("c> SEND FAIL")  # El protocolo no especifica un error especial, así que usamos el general
+            return client.RC.ERROR
+
+        try:
+            # Se conecta al servidor
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((client._server, client._port))
+
+            # Se envía la cadena "SEND" indicando la operación
+            op = "SEND\0"
+            sock.sendall(op.encode('utf-8'))
+
+            # Se envía el nombre del usuario que envia el mensaje
+            nombre_usuario = f"{client._nombre}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Se envía el nombre del usuario que recibe el mensaje
+            nombre_usuario = f"{user}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Enviar el mensaje
+            mensaje_str = f"{message}\0"
+            sock.sendall(mensaje_str.encode('utf-8'))
+
+            # Se recibe el resultado (un byte) 
+            resultado = sock.recv(1)
+
+            # Comprobamos el resultado
+            if not resultado:
+                # Cierra la conexión
+                sock.close()
+                print("c> DISCONNECT FAIL\n")
+                return client.RC.ERROR
+            
+            resultado = resultado[0]
+            
+            match resultado:
+                case 0:
+                    # Si es éxito, el servidor nos manda el ID del mensaje como cadena
+                    mensaje_id = client.leer_cadena(sock)
+                    print(f"c> SEND OK - MESSAGE {mensaje_id}")
+                    sock.close()
+                    return client.RC.OK
+                case 1:
+                    # Cierra la conexión
+                    sock.close()
+                    print("c> SEND FAIL, USER DOES NOT EXIST")
+                    return client.RC.USER_ERROR
+                case _:
+                    # Cierra la conexión
+                    sock.close()
+                    print("c> SEND FAIL")
+                    return client.RC.ERROR
+                
+        except Exception as e:
+            print("c> SEND FAIL")
+            return client.RC.ERROR
 
     # *
     # * @param user    - Receiver user name
