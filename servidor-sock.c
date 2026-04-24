@@ -46,7 +46,7 @@ void conexion(void *sc) {
       case DESTROY:
         resultado = destroy();
         sprintf(res, "%d;", resultado);
-        write(my_sc, res, strlen(res));
+        sendMessage(my_sc, res, strlen(res));
         break;
       case SET_VALUE:
       {
@@ -68,7 +68,7 @@ void conexion(void *sc) {
 
         resultado = set_value(key, value1, N_value2, V_value2, value3);
         sprintf(res, "%d;", resultado);
-        write(my_sc, res, strlen(res));
+        sendMessage(my_sc, res, strlen(res));
         break;
       }
       case GET_VALUE:
@@ -88,7 +88,7 @@ void conexion(void *sc) {
 
         resultado = get_value(key, v1, &N_v2, V_v2, &v3);
         sprintf(res, "%d;", resultado);
-        write(my_sc, res, strlen(res));
+        sendMessage(my_sc, res, strlen(res));
 
         /*Actualizamos la respuesta si ha ido todo bien*/
         if (resultado == 0) {
@@ -118,7 +118,7 @@ void conexion(void *sc) {
 
         resultado = modify_value(key, value1, N_value2, V_value2, value3);
         sprintf(res, "%d;", resultado);
-        write(my_sc, res, strlen(res));
+        sendMessage(my_sc, res, strlen(res));
         break;
       case DELETE_KEY:
         /*Recogemos la información necesaria para la operación*/
@@ -133,7 +133,7 @@ void conexion(void *sc) {
 
         resultado = delete_key(key);
         sprintf(res, "%d;", resultado);
-        write(my_sc, res, strlen(res));
+        sendMessage(my_sc, res, strlen(res));
         break;
 
       case EXIST:
@@ -149,14 +149,14 @@ void conexion(void *sc) {
 
         resultado = exist(key);
         sprintf(res, "%d;", resultado);
-        write(my_sc, res, strlen(res));
+        sendMessage(my_sc, res, strlen(res));
         break;
 
       default:
         perror("El código de operación no es válido");
         resultado = -1;
         sprintf(res, "%d;", resultado);
-        write(my_sc, res, strlen(res));
+        sendMessage(my_sc, res, strlen(res));
 	  }
   }
   printf("conexion cerrada\n");
