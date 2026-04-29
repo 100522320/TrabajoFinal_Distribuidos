@@ -11,4 +11,8 @@
 
 int op_a_int(char *operacion);
 
+int existe_usuario(char *nombre);
+
+unsigned char registrar_usuario(char *nombre);
+
 #endif

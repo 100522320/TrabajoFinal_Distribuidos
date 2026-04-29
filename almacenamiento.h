@@ -13,17 +13,19 @@ typedef struct Nodo_mensaje {
 
 
 // Para guardar los clientes registrados y sus datos
-typedef struct Nodo_registro_clientes {
-    char[MAX_NAME] nombre;  // Nombre del cliente con el que se registró
+typedef struct Nodo_clientes {
+    char nombre[MAX_NAME];  // Nombre del cliente con el que se registró
     int conectado;          // 0 si no esta conectado, 1 en caso contrario
 
     // Campos de red (solo tienen sentido cuando 'conectado' es 1)
     char ip[MAX_IP];                  // IP del cliente
     int puerto;                       // Puerto 
 
+    unsigned int ultimo_id; // Ultimo ID usado para este usuario
+
     // Puntero a la cabeza de la lista de mensajes sin entregar a esta persona
     nodo_mensaje *mensajes_pendientes;
 
-    struct Nodo_registro_clientes *next; // Puntero al siguiente cliente registrado
-} nodo_registro_clientes;
+    struct Nodo_clientes *next; // Puntero al siguiente cliente registrado
+} nodo_clientes;
 

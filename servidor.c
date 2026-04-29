@@ -1,6 +1,5 @@
 #include "mensajes.h"
 #include "gestion.h"
-#include "almacenamiento.h"
 #include <pthread.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
@@ -30,7 +29,7 @@ void conexion(void *sc) {
     pthread_mutex_unlock(&m);
 
     /*Variables para guardar los datos recibidos*/
-    char operacion[MAX_NAME];
+    char operacion[MAX_NAME], nombre[MAX_NAME];
     int op;
     ssize_t err;
     unsigned char resultado;
@@ -38,22 +37,34 @@ void conexion(void *sc) {
     while (1) {
         /*Primero, obtenemos la operación que se debe realizar*/
         err = readLine(my_sc,operacion,sizeof(operacion));
-        if (err == -1) {
+        if (err <= 0) {
             printf("Error en recepcion\n");
-            close(my_sc);
-            break;
-        } else if (err == 0) {
-            printf("El cliente cerró la conexión\n");
             close(my_sc);
             break;
         }
 
         /* Transformamos el codigo de operacion de str a int*/
         op = op_a_int(operacion);
+        if (op == -1){
+            printf("Error: no se reconoce esa operacion\n");
+            close(my_sc);
+            break;
+        }
 
         /* Ejecutamos la petición del cliente */
         switch(op){
             case OP_REGISTER:
+            /*Leemos el nombre del usuario*/
+                err = readLine(my_sc,nombre,sizeof(nombre));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+
+                resultado = registrar_usuario(nombre);
+                sendMessage(my_sc, (char *)&resultado,1);
+                break;
                 
             case OP_UNREGISTER:
             
@@ -70,7 +81,7 @@ void conexion(void *sc) {
             default:
                 perror("El código de operación no es válido");
                 resultado = 2;
-                sendMessage(my_sc, resultado, strlen(resultado));
+                sendMessage(my_sc, (char *)&resultado, 1);
         }
     }
     printf("s> conexion cerrada\n");
@@ -132,7 +143,7 @@ int main(int argc, char *argv[]) {
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
     // Imprimimos que el server ya funciona
-    printf("s> init server %s:%d\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port))
+    printf("s> init server %s:%d\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port));
 
     while (1) {
         printf("s> \n");

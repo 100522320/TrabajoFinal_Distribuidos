@@ -53,8 +53,6 @@ ssize_t readLine(int fd, void *buffer, size_t n)
 			else
                 		break;
         	} else {			/* numRead must be 1 if we get here*/
-            		if (ch == '\n')
-                		break;
             		if (ch == '\0')
                 		break;
             		if (totRead < n - 1) {		/* discard > (n-1) bytes */
