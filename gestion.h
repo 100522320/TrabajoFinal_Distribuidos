@@ -17,4 +17,6 @@ unsigned char registrar_usuario(char *nombre);
 
 unsigned char dar_de_baja_usuario(char *nombre);
 
+unsigned char conectar_usuario(char *nombre, int puerto_int, char *ip_cliente);
+
 #endif

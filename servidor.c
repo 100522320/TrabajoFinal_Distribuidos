@@ -17,20 +17,32 @@ pthread_mutex_t m;
 pthread_cond_t cv;
 int copiado = 0;
 
+// Estructura para pasar múltiples argumentos al hilo
+struct ThreadArgs {
+    int socket;
+    char ip[16];
+};
 
 
-void conexion(void *sc) {
+
+void conexion(void *arg) {
     int my_sc;
+    char ip_cliente[16];
+    struct ThreadArgs *mis_args = (struct ThreadArgs *)arg;
 
     pthread_mutex_lock(&m);
-    my_sc = *(int *)sc;
+
+    // Copiamos ambos valores del struct
+    my_sc = mis_args->socket;
+    strcpy(ip_cliente, mis_args->ip);
+
     copiado = 1;
     pthread_cond_signal(&cv);
     pthread_mutex_unlock(&m);
 
     /*Variables para guardar los datos recibidos*/
-    char operacion[MAX_NAME], nombre[MAX_NAME];
-    int op;
+    char operacion[MAX_NAME], nombre[MAX_NAME], puerto_str[20];
+    int op, puerto_int;
     ssize_t err;
     unsigned char resultado;
 
@@ -80,7 +92,27 @@ void conexion(void *sc) {
                 break;
 
             case OP_CONNECT:
-                
+                /*Leemos el nombre del usuario*/
+                err = readLine(my_sc,nombre,sizeof(nombre));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+
+                /*Leemos el puerto del usuario*/
+                err = readLine(my_sc,puerto_str,sizeof(puerto_str));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+                puerto_int = atoi(puerto_str);
+
+                resultado = conectar_usuario(nombre,puerto_int,ip_cliente);
+                sendMessage(my_sc, (char *)&resultado,1);
+                break;
+
             case OP_DISCONNECT:
                 
             case OP_SEND:
@@ -156,6 +188,8 @@ int main(int argc, char *argv[]) {
     // Imprimimos que el server ya funciona
     printf("s> init server %s:%d\n", inet_ntoa(server_addr.sin_addr), ntohs(server_addr.sin_port));
 
+    struct ThreadArgs args_hilo; // Creamos la estructura para pasar los argumentos a los hilos
+
     while (1) {
         printf("s> \n");
 
@@ -167,9 +201,13 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if (pthread_create(&thid, &attr, (void *)&conexion, (void *)&sc) < 0) {
-        printf("Error al lanzar el hilo\n");
-        break;
+        // Preparamos los argumentos para el hilo
+        args_hilo.socket = sc;
+        strcpy(args_hilo.ip, inet_ntoa(client_addr.sin_addr));
+
+        if (pthread_create(&thid, &attr, (void *)&conexion, (void *)&args_hilo) < 0) {
+            printf("Error al lanzar el hilo\n");
+            break;
         }
 
         pthread_mutex_lock(&m);
