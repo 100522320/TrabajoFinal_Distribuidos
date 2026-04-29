@@ -15,4 +15,6 @@ int existe_usuario(char *nombre);
 
 unsigned char registrar_usuario(char *nombre);
 
+unsigned char dar_de_baja_usuario(char *nombre);
+
 #endif
