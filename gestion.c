@@ -36,26 +36,27 @@ int op_a_int(char *operacion){
     return -1;
 }
 
-int existe_usuario(char *nombre){
-    /*Devuelve 1 si existe un usuario registrado con ese nombre y 0 en caso contrario.
+nodo_clientes *existe_usuario(char *nombre){
+    /*  Devuelve el puntero al nodo si existe un usuario registrado.
         Se asume que antes de llamarla ya se habrá hecho lock del mutex*/
     nodo_clientes *nodo = head;
 
     while (nodo){
         if (strcmp(nodo->nombre, nombre) == 0){
-            return 1;
+            return nodo;
         }
         
         nodo = nodo->next;
     }
-    return 0;
+    return NULL;
 }
 
 unsigned char registrar_usuario(char *nombre){
     pthread_mutex_lock(mutex_lista);
 
-    /*Comprobamos que no haya otro usuario resgistrado con el mismo nombre*/
-    if (existe_usuario(nombre) == 1){
+    /*Comprobamos que no haya otro usuario registrado con el mismo nombre*/
+    nodo_clientes *cliente = existe_usuario(nombre);
+    if (cliente != NULL){
         // Imprimimos el mensaje de error
         printf("s> REGISTER %s FAIL\n", nombre);
         pthread_mutex_unlock(mutex_lista);
@@ -77,12 +78,53 @@ unsigned char registrar_usuario(char *nombre){
     nuevo_cliente->ultimo_id = 0;
     nuevo_cliente->mensajes_pendientes = NULL;
     nuevo_cliente->next = head;
+    nuevo_cliente->before = NULL;
 
     /*Actualizamos head*/
     head = nuevo_cliente;
     
     // Imprimimos el mensaje de éxito
     printf("s> REGISTER %s OK\n", nombre);
+
+    pthread_mutex_unlock(mutex_lista);
+    return 0;
+}
+
+unsigned char dar_de_baja_usuario(char *nombre){
+    pthread_mutex_lock(mutex_lista);
+
+    /*Comprobamos que el usuario este registrado*/
+    nodo_clientes *cliente = existe_usuario(nombre);
+    if (cliente == NULL){
+        // Imprimimos el mensaje de error
+        printf("s> UNREGISTER %s FAIL\n", nombre);
+        pthread_mutex_unlock(mutex_lista);
+        return 1;
+    }
+    
+    /* Borramos el usuario*/
+    if(cliente->before != NULL){
+        cliente->before->next = cliente->next;
+    }
+    else{
+        head = cliente->next;
+    }
+
+    if(cliente->next != NULL){
+        cliente->next->before = cliente->before;
+    }
+    
+    /*Necesitamos borra tambien los mensajes pendientes de recibirs*/
+    nodo_mensaje *msg_actual = cliente->mensajes_pendientes;
+    while (msg_actual != NULL) {
+        nodo_mensaje *aux = msg_actual;
+        msg_actual = msg_actual->next;
+        free(aux); // Liberamos cada mensaje
+    }
+    free(cliente);
+
+    // Imprimimos el mensaje de éxito
+    printf("s> UNREGISTER %s OK\n", nombre);
 
     pthread_mutex_unlock(mutex_lista);
     return 0;

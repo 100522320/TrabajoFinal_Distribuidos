@@ -27,5 +27,6 @@ typedef struct Nodo_clientes {
     nodo_mensaje *mensajes_pendientes;
 
     struct Nodo_clientes *next; // Puntero al siguiente cliente registrado
+    struct Nodo_clientes *before; // Puntero al anterior cliente registrado
 } nodo_clientes;
 

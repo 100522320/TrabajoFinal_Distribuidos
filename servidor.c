@@ -54,7 +54,7 @@ void conexion(void *sc) {
         /* Ejecutamos la petición del cliente */
         switch(op){
             case OP_REGISTER:
-            /*Leemos el nombre del usuario*/
+                /*Leemos el nombre del usuario*/
                 err = readLine(my_sc,nombre,sizeof(nombre));
                 if (err <= 0) {
                     printf("Error en recepcion\n");
@@ -67,7 +67,18 @@ void conexion(void *sc) {
                 break;
                 
             case OP_UNREGISTER:
-            
+                /*Leemos el nombre del usuario*/
+                err = readLine(my_sc,nombre,sizeof(nombre));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+
+                resultado = dar_de_baja_usuario(nombre);
+                sendMessage(my_sc, (char *)&resultado,1);
+                break;
+
             case OP_CONNECT:
                 
             case OP_DISCONNECT:
