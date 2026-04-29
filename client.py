@@ -17,7 +17,7 @@ class client :
     _server = None
     _port = -1
     _nombre = None  # Sirve para recordar el nombre del usuario actual
-    _listen_sock = None  # < Para poder cerrar el hilo después
+    _listen_sock = None  # Para poder cerrar el hilo después
 
     # Funcion auxiliar para leer toda la cadena hasta encontrar un \0
     @staticmethod

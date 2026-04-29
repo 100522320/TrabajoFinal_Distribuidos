@@ -1,4 +1,6 @@
 #include "mensajes.h"
+#include "gestion.h"
+#include "almacenamiento.h"
 #include <pthread.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
@@ -11,9 +13,71 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+
 pthread_mutex_t m;
 pthread_cond_t cv;
 int copiado = 0;
+
+
+
+void conexion(void *sc) {
+    int my_sc;
+
+    pthread_mutex_lock(&m);
+    my_sc = *(int *)sc;
+    copiado = 1;
+    pthread_cond_signal(&cv);
+    pthread_mutex_unlock(&m);
+
+    /*Variables para guardar los datos recibidos*/
+    char operacion[MAX_NAME];
+    int op;
+    ssize_t err;
+    unsigned char resultado;
+
+    while (1) {
+        /*Primero, obtenemos la operación que se debe realizar*/
+        err = readLine(my_sc,operacion,sizeof(operacion));
+        if (err == -1) {
+            printf("Error en recepcion\n");
+            close(my_sc);
+            break;
+        } else if (err == 0) {
+            printf("El cliente cerró la conexión\n");
+            close(my_sc);
+            break;
+        }
+
+        /* Transformamos el codigo de operacion de str a int*/
+        op = op_a_int(operacion);
+
+        /* Ejecutamos la petición del cliente */
+        switch(op){
+            case OP_REGISTER:
+                
+            case OP_UNREGISTER:
+            
+            case OP_CONNECT:
+                
+            case OP_DISCONNECT:
+                
+            case OP_SEND:
+
+            case OP_USERS:
+
+            case OP_SENDATTACH:
+              
+            default:
+                perror("El código de operación no es válido");
+                resultado = 2;
+                sendMessage(my_sc, resultado, strlen(resultado));
+        }
+    }
+    printf("s> conexion cerrada\n");
+}
+
+
+
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {

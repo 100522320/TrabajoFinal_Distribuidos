@@ -23,52 +23,49 @@ int sendMessage(int socket, char * buffer, int len)
 		return(0);	/* full length has been sent */
 }
 
-int recvMessage(int socket, char *buffer, int len)
+ssize_t readLine(int fd, void *buffer, size_t n)
 {
-	int r;
-	int l = len;
-		
+	ssize_t numRead;  /* num of bytes fetched by last read() */
+	size_t totRead;	  /* total bytes read so far */
+	char *buf;
+	char ch;
 
-	do {	
-		r = read(socket, buffer, l);
-		l = l -r ;
-		buffer = buffer + r;
-	} while ((l>0) && (r>=0));
+
+	if (n <= 0 || buffer == NULL) { 
+		errno = EINVAL;
+		return -1; 
+	}
+
+	buf = buffer;
+	totRead = 0;
 	
-	if (r < 0)
-		return (-1);   /* fallo */
-	else
-		return(0);	/* full length has been receive */
-}
+	for (;;) {
+        	numRead = read(fd, &ch, 1);	/* read a byte */
 
-int leerDato(int fd, char *tipo, char *dest){
-    int len = 0;
-    char c, delimitador;
-
-    if(strcmp(tipo, "int")==0 || strcmp(tipo, "vec")==0){
-        delimitador = ';';
-    } else if(strcmp(tipo, "str")==0){
-        delimitador = '\0';
-    } else{
-        printf("Error: el tipo introducido no es válido\n");
-        return -1;
-    }
-
-    while (len < MAX_MESS) {
-        if (read(fd, &c, 1) != 1) {
-            return -1;
-        }
-        
-        if (c == delimitador) {
-            dest[len] = '\0';
-            return 0;
-        }
-        
-        dest[len++] = c;
-    }
-
-    printf("Error: tamaño máximo de mensaje excedido\n");
-    return -1;
+        	if (numRead == -1) {	
+            		if (errno == EINTR)	/* interrupted -> restart read() */
+                		continue;
+            	else
+			return -1;		/* some other error */
+        	} else if (numRead == 0) {	/* EOF */
+            		if (totRead == 0)	/* no byres read; return 0 */
+                		return 0;
+			else
+                		break;
+        	} else {			/* numRead must be 1 if we get here*/
+            		if (ch == '\n')
+                		break;
+            		if (ch == '\0')
+                		break;
+            		if (totRead < n - 1) {		/* discard > (n-1) bytes */
+				totRead++;
+				*buf++ = ch; 
+			}
+		} 
+	}
+	
+	*buf = '\0';
+    	return totRead;
 }
 
 
