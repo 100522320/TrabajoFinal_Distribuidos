@@ -135,6 +135,7 @@ unsigned char dar_de_baja_usuario(char *nombre){
 }
 
 unsigned char conectar_usuario(char *nombre, int puerto_cliente, char *ip_cliente){
+
     pthread_mutex_lock(mutex_lista);
 
     /*Comprobamos que el usuario este registrado y no conectado*/
@@ -245,6 +246,104 @@ unsigned char conectar_usuario(char *nombre, int puerto_cliente, char *ip_client
     // Actualizamos la lista de mensajes del cliente. 
     // Si todo fue bien, será NULL. Si hubo error a medias, apuntará al primer mensaje no enviado.
     cliente->mensajes_pendientes = mensaje;
+
+    pthread_mutex_unlock(mutex_lista);
+    return 0;
+}
+
+unsigned char desconectar_usuario(char *nombre){
+
+    pthread_mutex_lock(mutex_lista);
+
+    /*Comprobamos que el usuario este registrado y conectado*/
+    nodo_clientes *cliente = existe_usuario(nombre);
+    if (cliente == NULL){
+        // Imprimimos el mensaje de error
+        printf("s> DISCONNECT %s FAIL\n", nombre);
+        pthread_mutex_unlock(mutex_lista);
+        return 1;
+    }
+    if (cliente->conectado == 0){
+        // Imprimimos el mensaje de error
+        printf("s> DISCONNECT %s FAIL\n", nombre);
+        pthread_mutex_unlock(mutex_lista);
+        return 2;
+    }
+
+    // Rellenamos sus datos
+    cliente->conectado = 0;           
+    cliente->puerto = 0;              
+    memset(cliente->ip, 0, MAX_IP);  
+
+    // Imprimimos el mensaje de éxito
+    printf("s> DISCONNECT %s OK\n", nombre);
+
+    pthread_mutex_unlock(mutex_lista);
+    return 0;
+}
+
+int users(char *nombre, int *n_conectados, char *p_conectados){
+    pthread_mutex_lock(mutex_lista);
+
+    /*Comprobamos que el usuario este registrado y conectado*/
+    nodo_clientes *cliente = existe_usuario(nombre);
+    if (cliente == NULL){
+        // Imprimimos el mensaje de error
+        printf("s> CONNECTEDUSERS %s FAIL\n", nombre);
+        pthread_mutex_unlock(mutex_lista);
+        return 2;
+    }
+    if (cliente->conectado == 0){
+        // Imprimimos el mensaje de error
+        printf("s> CONNECTEDUSERS %s FAIL\n", nombre);
+        pthread_mutex_unlock(mutex_lista);
+        return 1;
+    }
+
+    // Miramos todos los usuarios conectados actualmente
+    nodo_clientes *cliente = head;
+    int num_usu;
+    int espacio_necesario = 0;
+    while(cliente){
+        if(cliente->conectado == 1){
+            num_usu++; 
+            espacio_necesario += strlen(cliente->nombre) + 1; // +1 para el separador y el /0 final
+        }
+        cliente = cliente->next;
+    }
+
+    // Reservamos memoria para esos clientes y guardamos sus nombres
+    p_conectados = (char *)malloc(sizeof(char) * espacio_necesario);
+    if (p_conectados == NULL){
+        // Imprimimos el mensaje de error
+        printf("s> CONNECTEDUSERS %s FAIL\n", nombre);
+        pthread_mutex_unlock(mutex_lista);
+        return 2;
+    }
+
+    cliente = head;
+    int desplazamiento = 0;
+    int n_copiados = 0;
+    while(cliente){
+        if(cliente->conectado == 1){
+            if(n_copiados < (num_usu - 1) ){
+                desplazamiento += sprintf(p_conectados + desplazamiento, "%s;", cliente->nombre);
+                n_copiados++;
+            }
+            else{ // Es el ultimo conectado
+                desplazamiento += sprintf(p_conectados + desplazamiento, "%s", cliente->nombre);
+                n_copiados++;
+                break;
+            }
+        }
+        cliente = cliente->next;
+    }
+
+    // Devolvemos los datos que faltan
+    *n_conectados = num_usu;
+
+    // Imprimimos el mensaje de éxito
+    printf("s> CONNECTEDUSERS %s OK\n", nombre);
 
     pthread_mutex_unlock(mutex_lista);
     return 0;

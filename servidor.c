@@ -114,10 +114,61 @@ void conexion(void *arg) {
                 break;
 
             case OP_DISCONNECT:
+                /*Leemos el nombre del usuario*/
+                err = readLine(my_sc,nombre,sizeof(nombre));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+
+                resultado = desconectar_usuario(nombre);
+                sendMessage(my_sc, (char *)&resultado,1);
+                break;
                 
             case OP_SEND:
 
             case OP_USERS:
+                /*Leemos el nombre del usuario*/
+                err = readLine(my_sc,nombre,sizeof(nombre));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+
+                /* Preparamos los punteros necesarios*/
+                int *n_conectados = 0;           // El numero de usuarios conectados
+                char *p_conectados;         /* Un puntero a una direccion de memoria donde se guardan los nombres de los 
+                                                usuarios conectados separados por ';' */ 
+                resultado = users(nombre,n_conectados,p_conectados);
+
+                // Enviamos los datos al cliente
+                sendMessage(my_sc, (char *)&resultado,1);
+                if(resultado == 0){
+                    char num_str[20]; 
+                    // Convertimos num_conectados a texto y lo guardamos en num_str
+                    sprintf(num_str, "%d", n_conectados);
+                    sendMessage(my_sc, num_str,strlen(num_str) + 1);
+
+                    if (n_conectados > 0 && p_conectados != NULL) {
+                        // strtok saca el primer nombre (hasta el primer ';')
+                        char *trozo = strtok(p_conectados, ";");
+                        
+                        while (trozo != NULL) {
+                            // Enviamos este nombre solo
+                            sendMessage(my_sc, trozo, strlen(trozo) + 1);
+                            
+                            // Le pedimos a strtok que nos dé el siguiente nombre
+                            trozo = strtok(NULL, ";");
+                        }
+                        
+                        // Como todo estaba en un solo bloque de memoria, hacemos un solo free
+                        free(p_conectados);
+                    }
+                }
+                
+                break;
 
             case OP_SENDATTACH:
               
