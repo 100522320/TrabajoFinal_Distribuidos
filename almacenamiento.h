@@ -1,3 +1,6 @@
+#ifndef ALMACENAMIENTO_H
+#define ALMACENAMIENTO_H
+
 #define MAX_NAME 256
 #define MAX_MSG 256
 #define MAX_IP 16
@@ -30,3 +33,4 @@ typedef struct Nodo_clientes {
     struct Nodo_clientes *before; // Puntero al anterior cliente registrado
 } nodo_clientes;
 
+#endif

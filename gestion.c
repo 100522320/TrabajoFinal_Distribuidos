@@ -77,7 +77,7 @@ int entregar_mensaje(nodo_clientes *cliente_dest, nodo_mensaje *mensaje) {
     }
 
     // Enviamos el mensaje al destinatario siguiendo el protocolo
-    char op[] = "SEND_MESSAGE\0";
+    char op[] = "SEND MESSAGE\0";
     sendMessage(sock, op, strlen(op) + 1);
     
     char remitente[MAX_NAME + 1];
@@ -142,7 +142,7 @@ unsigned char registrar_usuario(char *nombre){
     nodo_clientes *nuevo_cliente = (nodo_clientes *)malloc(sizeof(nodo_clientes));
     if (nuevo_cliente == NULL) {
         perror("Error asignando memoria para el nuevo cliente");
-        pthread_mutex_unlock(&&mutex_lista);
+        pthread_mutex_unlock(&mutex_lista);
         return 2; 
     }
 
@@ -273,7 +273,7 @@ unsigned char desconectar_usuario(char *nombre, char *ip_cliente){
     if (strcmp(cliente->ip, ip_cliente) != 0){
         // Imprimimos el mensaje de error
         printf("s> DISCONNECT %s FAIL\n", nombre);
-        pthread_mutex_unlock(&&mutex_lista);
+        pthread_mutex_unlock(&mutex_lista);
         return 3;
     }
 
@@ -357,14 +357,14 @@ unsigned char users(char *nombre, int *n_conectados, char **p_conectados){
 }
 
 unsigned char enviar_mensaje(char *remitente, char *destinatario, char *contenido, unsigned int *id_asignado) {
-    pthread_mutex_lock(&&mutex_lista);
+    pthread_mutex_lock(&mutex_lista);
 
     nodo_clientes *nodo_remitente = existe_usuario(remitente);
     nodo_clientes *nodo_destinatario = existe_usuario(destinatario);
 
     // Si uno de los dos no existe, enviamos error 1 al cliente
     if (nodo_remitente == NULL || nodo_destinatario == NULL) {
-        pthread_mutex_unlock(&&mutex_lista);
+        pthread_mutex_unlock(&mutex_lista);
         return 1;
     }
 
@@ -379,7 +379,7 @@ unsigned char enviar_mensaje(char *remitente, char *destinatario, char *contenid
     // Creamos el nodo del mensaje
     nodo_mensaje *nuevo_msg = (nodo_mensaje *)malloc(sizeof(nodo_mensaje));
     if (nuevo_msg == NULL) {
-        pthread_mutex_unlock(&&mutex_lista);
+        pthread_mutex_unlock(&mutex_lista);
         return 2;
     }
     nuevo_msg->id = id_nuevo;

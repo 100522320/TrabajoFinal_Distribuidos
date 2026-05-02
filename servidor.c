@@ -1,4 +1,5 @@
 #include "mensajes.h"
+#include "almacenamiento.h"
 #include "gestion.h"
 #include <pthread.h>
 #include <stdbool.h>
@@ -48,9 +49,12 @@ void conexion(void *arg) {
 
     while (1) {
         /*Primero, obtenemos la operación que se debe realizar*/
-        err = readLine(my_sc,operacion,sizeof(operacion));
+        err = readLine(my_sc, operacion, sizeof(operacion));
         if (err <= 0) {
-            printf("Error en recepcion\n");
+            // Si es 0, es un cierre limpio del cliente. Si es < 0, es un error real.
+            if (err < 0) {
+                printf("Error en recepcion\n");
+            }
             close(my_sc);
             break;
         }
@@ -215,7 +219,6 @@ void conexion(void *arg) {
                 sendMessage(my_sc, (char *)&resultado, 1);
         }
     }
-    printf("s> conexion cerrada\n");
 }
 
 
@@ -279,8 +282,6 @@ int main(int argc, char *argv[]) {
     struct ThreadArgs args_hilo; // Creamos la estructura para pasar los argumentos a los hilos
 
     while (1) {
-        printf("s> \n");
-
         // Esperamos a recibir alguna peticion de un cliente
         sc = accept(sd, (struct sockaddr *)&client_addr, (socklen_t *)&size);
 

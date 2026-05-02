@@ -25,6 +25,8 @@ class client :
         buffer = b''
         while True:
             byte = socket_conexion.recv(1)
+            if not byte: 
+                break
             if byte == b'\0':
                 break
             buffer += byte
@@ -61,24 +63,24 @@ class client :
 
             # Comprobamos el resultado
             if not resultado:
-                print("c> REGISTER FAIL\n")
+                print("c> REGISTER FAIL")
                 return client.RC.ERROR
             
             resultado = resultado[0]
             
             match resultado:
                 case 0:
-                    print("c> REGISTER OK\n")
+                    print("c> REGISTER OK")
                     return client.RC.OK
                 case 1:
-                    print("c> USERNAME IN USE\n")
+                    print("c> USERNAME IN USE")
                     return client.RC.USER_ERROR
                 case _:
-                    print("c> REGISTER FAIL\n")
+                    print("c> REGISTER FAIL")
                     return client.RC.ERROR
                 
         except Exception as e:
-            print("c> REGISTER FAIL\n")
+            print("c> REGISTER FAIL")
             return client.RC.ERROR
 
     # *
@@ -110,24 +112,24 @@ class client :
 
             # Comprobamos el resultado
             if not resultado:
-                print("c> UNREGISTER FAIL\n")
+                print("c> UNREGISTER FAIL")
                 return client.RC.ERROR
             
             resultado = resultado[0]
             
             match resultado:
                 case 0:
-                    print("c> UNREGISTER OK\n")
+                    print("c> UNREGISTER OK")
                     return client.RC.OK
                 case 1:
-                    print("c> USER DOES NOT EXIST\n")
+                    print("c> USER DOES NOT EXIST")
                     return client.RC.USER_ERROR
                 case _:
-                    print("c> UNREGISTER FAIL\n")
+                    print("c> UNREGISTER FAIL")
                     return client.RC.ERROR
                 
         except Exception as e:
-            print("c> UNREGISTER FAIL\n")
+            print("c> UNREGISTER FAIL")
             return client.RC.ERROR
         
     @staticmethod
@@ -142,7 +144,7 @@ class client :
                 conn, addr = listen_sock.accept()
                 # Recibimos todos los datos
                 op = client.leer_cadena(conn)
-                if (op == "SEND_MESSAGE"):
+                if (op == "SEND MESSAGE"):
                     usuario_original = client.leer_cadena(conn)
                     id_str = client.leer_cadena(conn)
                     mensaje = client.leer_cadena(conn)
@@ -150,7 +152,7 @@ class client :
                     # Imprimimos el mensaje
                     print(f"s> MESSAGE {id_str} FROM {usuario_original}")
                     print(f"{mensaje}")
-                    print("END\n")
+                    print("END")
 
                 elif (op == "SEND MESS_ACK"):
                     id_str = client.leer_cadena(conn)
@@ -174,17 +176,16 @@ class client :
     def  connect(user) :
         try:
             # Creamos un socket de escucha
-            client.listen_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # Al poner el puerto a 0, el Sistema Operativo nos asigna uno libre automáticamente
-            client.listen_sock.bind(('0.0.0.0', 0))
+            client._listen_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client._listen_sock.bind((client._server, 0))
             # Obtenemos cuál es ese puerto que nos han asignado
-            mi_puerto_escucha = client.listen_sock.getsockname()[1]
+            mi_puerto_escucha = client._listen_sock.getsockname()[1]
             # Ponemos el socket en modo "escucha"
-            client.listen_sock.listen(5)
+            client._listen_sock.listen(5)
 
             # Creamos el hilo pasándole nuestro socket de escucha
-            hilo = threading.Thread(target=client.hilo_escucha, args=(client.listen_sock,))
-            # daemon=True hace que el hilo se cierre automáticamente si salimos del programa
+            hilo = threading.Thread(target=client.hilo_escucha, args=(client._listen_sock,))
+            # daemon=True para que el hilo se cierre automáticamente si salimos del programa
             hilo.daemon = True 
             hilo.start()
 
@@ -212,7 +213,7 @@ class client :
 
             # Comprobamos el resultado
             if not resultado:
-                print("c> CONNECT FAIL\n")
+                print("c> CONNECT FAIL")
                 return client.RC.ERROR
             
             resultado = resultado[0]
@@ -221,20 +222,20 @@ class client :
                 case 0:
                     # Guardamos quién somos para que USERS funcione después
                     client._nombre = user
-                    print("c> CONNECT OK\n")
+                    print("c> CONNECT OK")
                     return client.RC.OK
                 case 1:
-                    print("c> CONNECT FAIL, USER DOES NOT EXIST\n")
+                    print("c> CONNECT FAIL, USER DOES NOT EXIST")
                     return client.RC.USER_ERROR
                 case 2:
-                    print("c> USER ALREADY CONNECTED\n")
+                    print("c> USER ALREADY CONNECTED")
                     return client.RC.USER_ERROR
                 case _:
-                    print("c> CONNECT FAIL\n")
+                    print("c> CONNECT FAIL")
                     return client.RC.ERROR
                 
         except Exception as e:
-            print("c> CONNECT FAIL\n")
+            print("c> CONNECT FAIL")
             return client.RC.ERROR
 
 
@@ -247,7 +248,7 @@ class client :
     def  users() :
         # Comprobamos que este conectado ya que sino client._nombre será None y fallará
         if client._nombre is None:
-            print("c> CONNECTED USERS FAIL, USER IS NOT CONNECTED\n")
+            print("c> CONNECTED USERS FAIL, USER IS NOT CONNECTED")
             return client.RC.USER_ERROR
         
         try:
@@ -268,7 +269,7 @@ class client :
 
             # Comprobamos el resultado
             if not resultado:
-                print("c> CONNECTED USERS FAIL\n")
+                print("c> CONNECTED USERS FAIL")
                 sock.close()
                 return client.RC.ERROR
             
@@ -288,17 +289,17 @@ class client :
 
                     return client.RC.OK
                 case 1:
-                    print("c> CONNECTED USERS FAIL, USER IS NOT CONNECTED\n")
+                    print("c> CONNECTED USERS FAIL, USER IS NOT CONNECTED")
                     return client.RC.USER_ERROR
                 case _:
-                    print("c> CONNECTED USERS FAIL\n")
+                    print("c> CONNECTED USERS FAIL")
                     return client.RC.ERROR
             
             # Cierra la conexión
             sock.close()
                 
         except Exception as e:
-            print("c> CONNECTED USERS FAIL\n")
+            print("c> CONNECTED USERS FAIL")
             return client.RC.ERROR
 
 
@@ -339,23 +340,23 @@ class client :
 
             # Comprobamos el resultado
             if not resultado:
-                print("c> DISCONNECT FAIL\n")
+                print("c> DISCONNECT FAIL")
                 return client.RC.ERROR
             
             resultado = resultado[0]
             
             match resultado:
                 case 0:
-                    print("c> DISCONNECT OK\n")
+                    print("c> DISCONNECT OK")
                     return client.RC.OK
                 case 1:
-                    print("c> DISCONNECT FAIL, USER DOES NOT EXIST\n")
+                    print("c> DISCONNECT FAIL, USER DOES NOT EXIST")
                     return client.RC.USER_ERROR
                 case 2:
-                    print("c> DISCONNECT FAIL, USER NOT CONNECTED\n")
+                    print("c> DISCONNECT FAIL, USER NOT CONNECTED")
                     return client.RC.USER_ERROR
                 case _:
-                    print("c> DISCONNECT FAIL\n")
+                    print("c> DISCONNECT FAIL")
                     return client.RC.ERROR
                 
         except Exception as e:
@@ -363,7 +364,7 @@ class client :
                 client._listen_sock.close()
                 client._listen_sock = None
             client._nombre = None
-            print("c> DISCONNECT FAIL\n")
+            print("c> DISCONNECT FAIL")
             return client.RC.ERROR
 
     # *
@@ -377,12 +378,12 @@ class client :
     def  send(user,  message) :
         # Comprobamos que este conectado ya que sino client._nombre será None y fallará
         if client._nombre is None:
-            print("c> SEND FAIL\n")
+            print("c> SEND FAIL")
             return client.RC.ERROR
 
         # Máximo 255 caracteres, ya que el '\0' final suma 1 byte para llegar a los 256 
         if len(message) > 255:
-            print("c> SEND FAIL\n")  # El protocolo no especifica un error especial, así que usamos el general
+            print("c> SEND FAIL")  # El protocolo no especifica un error especial, así que usamos el general
             return client.RC.ERROR
 
         try:
@@ -413,7 +414,7 @@ class client :
             if not resultado:
                 # Cierra la conexión
                 sock.close()
-                print("c> SEND FAIL\n")
+                print("c> SEND FAIL")
                 return client.RC.ERROR
             
             resultado = resultado[0]
@@ -422,22 +423,22 @@ class client :
                 case 0:
                     # Si es éxito, el servidor nos manda el ID del mensaje como cadena
                     mensaje_id = client.leer_cadena(sock)
-                    print(f"c> SEND OK - MESSAGE {mensaje_id}\n")
+                    print(f"c> SEND OK - MESSAGE {mensaje_id}")
                     sock.close()
                     return client.RC.OK
                 case 1:
                     # Cierra la conexión
                     sock.close()
-                    print("c> SEND FAIL, USER DOES NOT EXIST\n")
+                    print("c> SEND FAIL, USER DOES NOT EXIST")
                     return client.RC.USER_ERROR
                 case _:
                     # Cierra la conexión
                     sock.close()
-                    print("c> SEND FAIL\n")
+                    print("c> SEND FAIL")
                     return client.RC.ERROR
                 
         except Exception as e:
-            print("c> SEND FAIL\n")
+            print("c> SEND FAIL")
             return client.RC.ERROR
 
     # *

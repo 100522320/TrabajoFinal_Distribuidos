@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include "mensajes.h"
 #include <stdlib.h>
+#include <errno.h>
 
 int sendMessage(int socket, char * buffer, int len)
 {
