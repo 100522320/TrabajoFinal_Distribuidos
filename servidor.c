@@ -41,7 +41,7 @@ void conexion(void *arg) {
     pthread_mutex_unlock(&m);
 
     /*Variables para guardar los datos recibidos*/
-    char operacion[MAX_NAME], nombre[MAX_NAME], puerto_str[20];
+    char operacion[MAX_NAME], nombre[MAX_NAME], puerto_str[20], destinatario[MAX_NAME], mensaje[MAX_MSG];
     int op, puerto_int;
     ssize_t err;
     unsigned char resultado;
@@ -122,11 +122,48 @@ void conexion(void *arg) {
                     break;
                 }
 
-                resultado = desconectar_usuario(nombre);
+                resultado = desconectar_usuario(nombre,ip_cliente);
                 sendMessage(my_sc, (char *)&resultado,1);
                 break;
                 
             case OP_SEND:
+                /*Leemos el nombre del usuario*/
+                err = readLine(my_sc,nombre,sizeof(nombre));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+                /*Leemos el nombre del destinatario*/
+                err = readLine(my_sc,destinatario,sizeof(destinatario));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+                /*Leemos el mensaje*/
+                err = readLine(my_sc,mensaje,sizeof(mensaje));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+
+                /* Preparamos los punteros necesarios*/
+                unsigned int id_asignado = 0; 
+
+                resultado = enviar_mensaje(nombre, destinatario, mensaje, &id_asignado);
+
+                // Enviamos los datos al cliente
+                sendMessage(my_sc, (char *)&resultado,1);
+                if(resultado == 0){
+                    char id_str[20]; 
+                    // Convertimos id_asignado a texto y lo guardamos en id_str
+                    sprintf(id_str, "%u", id_asignado);
+                    sendMessage(my_sc, id_str,strlen(id_str) + 1);
+                }
+                
+                break;
 
             case OP_USERS:
                 /*Leemos el nombre del usuario*/
@@ -138,10 +175,10 @@ void conexion(void *arg) {
                 }
 
                 /* Preparamos los punteros necesarios*/
-                int *n_conectados = 0;           // El numero de usuarios conectados
-                char *p_conectados;         /* Un puntero a una direccion de memoria donde se guardan los nombres de los 
+                int n_conectados = 0;           // El numero de usuarios conectados
+                char *p_conectados = NULL;         /* Un puntero a una direccion de memoria donde se guardan los nombres de los 
                                                 usuarios conectados separados por ';' */ 
-                resultado = users(nombre,n_conectados,p_conectados);
+                resultado = users(nombre,&n_conectados,&p_conectados);
 
                 // Enviamos los datos al cliente
                 sendMessage(my_sc, (char *)&resultado,1);

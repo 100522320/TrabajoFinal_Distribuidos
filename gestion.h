@@ -20,14 +20,18 @@ int op_a_int(char *operacion);
 
 int existe_usuario(char *nombre);
 
+int entregar_mensaje(nodo_clientes *cliente_dest, nodo_mensaje *mensaje);
+
 unsigned char registrar_usuario(char *nombre);
 
 unsigned char dar_de_baja_usuario(char *nombre);
 
-unsigned char conectar_usuario(char *nombre, int puerto_int, char *ip_cliente);
+unsigned char conectar_usuario(char *nombre, int puerto_cliente, char *ip_cliente);
 
-unsigned char desconectar_usuario(char *nombre);
+unsigned char desconectar_usuario(char *nombre, char *ip_cliente);
 
-int users(char *nombre,  int *n_conectados, char *p_conectados);
+unsigned char users(char *nombre, int *n_conectados, char **p_conectados);
+
+unsigned char enviar_mensaje(char *remitente, char *destinatario, char *contenido, unsigned int *id_asignado);
 
 #endif

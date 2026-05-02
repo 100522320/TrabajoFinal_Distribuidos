@@ -151,6 +151,12 @@ class client :
                     print(f"s> MESSAGE {id_str} FROM {usuario_original}")
                     print(f"{mensaje}")
                     print("END\n")
+
+                elif (op == "SEND MESS_ACK"):
+                    id_str = client.leer_cadena(conn)
+                        
+                    # Imprimimos el mensaje
+                    print(f"c> SEND MESSAGE {id_str} OK")
                     
                 # Cerramos la conexión de este mensaje concreto
                 conn.close()
