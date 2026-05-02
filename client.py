@@ -177,7 +177,7 @@ class client :
         try:
             # Creamos un socket de escucha
             client._listen_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client._listen_sock.bind((client._server, 0))
+            client._listen_sock.bind(('0.0.0.0', 0))
             # Obtenemos cuál es ese puerto que nos han asignado
             mi_puerto_escucha = client._listen_sock.getsockname()[1]
             # Ponemos el socket en modo "escucha"
