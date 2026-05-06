@@ -179,6 +179,19 @@ class client :
                         
                     # Imprimimos el mensaje
                     print(f"c> SENDATTACH MESSAGE {id_str} {fichero} OK")
+                
+                elif (op == "GET_FILE"):
+                    # Leemos los dos campos que nos manda el que pide el archivo
+                    usuario_peticion = client.leer_cadena(conn)
+                    fichero_pedido = client.leer_cadena(conn)
+                    
+                    # Abrimos el fichero local en modo lectura
+                    with open(fichero_pedido, 'rb') as f:
+                        # Vamos leyendo y enviando el fichero en bloques de 4096 bytes
+                        dato = f.read(4096)
+                        while dato:
+                            conn.sendall(dato)
+                            dato = f.read(4096)
                     
                 # Cerramos la conexión de este mensaje concreto
                 conn.close()
@@ -307,7 +320,8 @@ class client :
                         datos_cliente = client.leer_cadena(sock).split(" :: ")
                         print(f"{datos_cliente[0]}")
 
-                        client._dir_usuarios_conectados[datos_cliente[0]] = {"ip": datos_cliente[1], "puerto": datos_cliente[2]}
+                        # Almacenamos la dirección
+                        client._dir_usuarios_conectados[datos_cliente[0]] = {"ip": datos_cliente[1], "puerto": int(datos_cliente[2])}
 
                     return client.RC.OK
                 case 1:
@@ -482,13 +496,17 @@ class client :
         if len(message) > 255:
             print("c> SENDATTACH FAIL")  # El protocolo no especifica un error especial, así que usamos el general
             return client.RC.ERROR
+        
+        if len(file) > 255:
+            print("c> SENDATTACH FAIL")  # El protocolo no especifica un error especial, así que usamos el general
+            return client.RC.ERROR
 
         try:
             # Se conecta al servidor
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((client._server, client._port))
 
-            # Se envía la cadena "SEND" indicando la operación
+            # Se envía la cadena "SENDATTACH" indicando la operación
             op = "SENDATTACH\0"
             sock.sendall(op.encode('utf-8'))
 
@@ -505,8 +523,8 @@ class client :
             sock.sendall(mensaje_str.encode('utf-8'))
 
             # Se envía el nombre del fichero
-            mensaje_str = f"{file}\0"
-            sock.sendall(mensaje_str.encode('utf-8'))
+            fichero_str = f"{file}\0"
+            sock.sendall(fichero_str.encode('utf-8'))
 
             # Se recibe el resultado (un byte) 
             resultado = sock.recv(1)
@@ -540,6 +558,68 @@ class client :
                 
         except Exception as e:
             print("c> SENDATTACH FAIL")
+            return client.RC.ERROR
+
+    # *
+    # * @param user    - Nombre del usuario propietario del archivo
+    # * @param file    - Nombre del archivo a transferir
+    # * @param local_file - Nombre del archivo en el que se van a copiar los datos
+    # * 
+    # * @return OK if the server had successfully delivered the message
+    # * @return USER_ERROR if the user is not connected (the message is queued for delivery)
+    # * @return ERROR the user does not exist or another error occurred
+    @staticmethod
+    def getFile(user, file, local_file):
+        # Comprobamos que este conectado ya que sino client._nombre será None y fallará
+        if client._nombre is None:
+            print("c> GETFILE FAIL")
+            return client.RC.ERROR
+
+        # Máximo 255 caracteres, ya que el '\0' final suma 1 byte para llegar a los 256 
+        if len(file) > 255:
+            print("c> SENDATTACH FAIL")  # El protocolo no especifica un error especial, así que usamos el general
+            return client.RC.ERROR
+        
+        # Tratamos de obtener la dirección del usuario que posee el fichero
+        if user not in client._dir_usuarios_conectados:
+            client.users() # Forzamos refresco
+
+            if user not in client._dir_usuarios_conectados:
+                print("c> FILE TRANSFER FAILED, user not connected.")
+                return client.RC.USER_ERROR
+
+        try:
+            # Se conecta al servidor
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((client._dir_usuarios_conectados[user]["ip"], client._dir_usuarios_conectados[user]["puerto"]))
+
+            # Se envía la cadena "GETFILE" indicando la operación
+            op = "GET_FILE\0"
+            sock.sendall(op.encode('utf-8'))
+
+            # Se envía el nombre del usuario que envia el mensaje
+            nombre_usuario = f"{client._nombre}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Se envía el nombre del fichero a transferir
+            fichero_str = f"{file}\0"
+            sock.sendall(fichero_str.encode('utf-8'))
+
+            # Se va copiando el archivo transferido en el local en bloques de 4096 bytes
+            with open(local_file, 'wb') as f:
+                dato = sock.recv(4096)
+                while dato:
+                    f.write(dato)
+                    dato = sock.recv(4096)
+            
+            sock.close()
+            
+            # Se imprime confirmación de la transferencia de archivo
+            print(f"c> GETFILE OK") 
+            return client.RC.OK
+                
+        except Exception as e:
+            print("c> GETFILE FAIL")
             return client.RC.ERROR
 
     # *
@@ -601,6 +681,12 @@ class client :
                             client.sendAttach(line[1], line[2], message)
                         else :
                             print("Syntax error. Usage: SENDATTACH <userName> <filename> <message>")
+                    
+                    elif(line[0]=="GETFILE"):
+                        if (len(line) >= 4) :
+                            client.getFile(line[1], line[2], line[3])
+                        else :
+                            print("Syntax error. Usage: GETFILE <userName> <filename> <localfilename>")
 
                     elif(line[0]=="QUIT") :
                         if (len(line) == 1) :
