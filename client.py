@@ -18,6 +18,7 @@ class client :
     _port = -1
     _nombre = None  # Sirve para recordar el nombre del usuario actual
     _listen_sock = None  # Para poder cerrar el hilo después
+    _dir_usuarios_conectados = {} # Para almacenar la dirección (ip y puerto) de los usuarios conectados
 
     # Funcion auxiliar para leer toda la cadena hasta encontrar un \0
     @staticmethod
@@ -303,8 +304,10 @@ class client :
 
                     # Leemos el nombre de cada cliente conectado y los vamos imprimiendo
                     for i in range(num_users):
-                        cliente = client.leer_cadena(sock)
-                        print(f"{cliente}")
+                        datos_cliente = client.leer_cadena(sock).split(" :: ")
+                        print(f"{datos_cliente[0]}")
+
+                        client._dir_usuarios_conectados[datos_cliente[0]] = {"ip": datos_cliente[1], "puerto": datos_cliente[2]}
 
                     return client.RC.OK
                 case 1:

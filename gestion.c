@@ -396,7 +396,9 @@ unsigned char users(char *nombre, int *n_conectados, char **p_conectados){
     while(aux){
         if(aux->conectado == 1){
             num_usu++; 
-            espacio_necesario += strlen(aux->nombre) + 1; // +1 para el separador y el /0 final
+            // Vamos reservando espacio para cada usuario conectado en formato <nombre> :: <ip> :: <puerto> (dejando 5 bytes para el 
+            // puerto dado que su valor máximo es 65535)
+            espacio_necesario += strlen(aux->nombre) + 4 + strlen(aux->ip) + 4 + 5 + 1; // +1 para el separador (";") y el /0 final
         }
         aux = aux->next;
     }
@@ -416,11 +418,11 @@ unsigned char users(char *nombre, int *n_conectados, char **p_conectados){
     while(aux){
         if(aux->conectado == 1){
             if(n_copiados < (num_usu - 1) ){
-                desplazamiento += sprintf((*p_conectados) + desplazamiento, "%s;", aux->nombre);
+                desplazamiento += sprintf((*p_conectados) + desplazamiento, "%s :: %s :: %d;", aux->nombre, aux->ip, aux->puerto);
                 n_copiados++;
             }
-            else{ // Es el ultimo conectado
-                desplazamiento += sprintf((*p_conectados) + desplazamiento, "%s", aux->nombre);
+            else{ // Es el ultimo conectado, por lo que no hay que añadir separador (";")
+                desplazamiento += sprintf((*p_conectados) + desplazamiento, "%s :: %s :: %d", aux->nombre, aux->ip, aux->puerto);
                 n_copiados++;
                 break;
             }
