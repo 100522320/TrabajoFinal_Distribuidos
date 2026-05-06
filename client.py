@@ -443,7 +443,9 @@ class client :
             # Se envía el mensaje llamando primero a la función del servicio web para limpiar espacios innecesarios
             wsdl = "http://127.0.0.1:8000/?wsdl"
             soap_client = zeep.Client(wsdl=wsdl)
-            mensaje_str = soap_client.service.limpiarEspacios(message)
+            message = soap_client.service.limpiarEspacios(message)
+            
+            mensaje_str = f"{message}\0"
             sock.sendall(mensaje_str.encode('utf-8'))
 
             # Se recibe el resultado (un byte) 
@@ -524,7 +526,9 @@ class client :
             # Se envía el mensaje llamando primero a la función del servicio web para limpiar espacios innecesarios
             wsdl = "http://127.0.0.1:8000/?wsdl"
             soap_client = zeep.Client(wsdl=wsdl)
-            mensaje_str = soap_client.service.limpiarEspacios(message)
+            message = soap_client.service.limpiarEspacios(message)
+            
+            mensaje_str = f"{message}\0"
             sock.sendall(mensaje_str.encode('utf-8'))
 
             # Se envía el nombre del fichero
