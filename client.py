@@ -486,7 +486,7 @@ class client :
     # * @return USER_ERROR if the user is not connected (the message is queued for delivery)
     # * @return ERROR the user does not exist or another error occurred
     @staticmethod
-    def  sendAttach(user,  file,  message) :
+    def  sendAttach(user,  message, file) :
         # Comprobamos que este conectado ya que sino client._nombre será None y fallará
         if client._nombre is None:
             print("c> SENDATTACH FAIL")
@@ -676,11 +676,14 @@ class client :
 
                     elif(line[0]=="SENDATTACH") :
                         if (len(line) >= 4) :
+                            filename = line[-1]
+
                             #  Remove first two words
-                            message = ' '.join(line[3:])
-                            client.sendAttach(line[1], line[2], message)
+                            message = ' '.join(line[2:-1])
+                            
+                            client.sendAttach(line[1], message, filename)
                         else :
-                            print("Syntax error. Usage: SENDATTACH <userName> <filename> <message>")
+                            print("Syntax error. Usage: SENDATTACH <userName> <message> <filename>")
                     
                     elif(line[0]=="GETFILE"):
                         if (len(line) >= 4) :

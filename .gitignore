@@ -1,1 +1,32 @@
-.vscode
+# ------------------------------------
+# C / Makefile (Servidor)
+# ------------------------------------
+# Archivos objeto compilados
+*.o
+
+# Ejecutable final generado por el Makefile
+server
+
+# ------------------------------------
+# Python (Cliente)
+# ------------------------------------
+# Archivos de caché compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ------------------------------------
+# Sistema Operativo y Editores
+# ------------------------------------
+# Archivos basura de macOS y Windows
+.DS_Store
+Thumbs.db
+
+# Archivos de configuración de VSCode (opcional, bórralo si quieres subir tus settings)
+.vscode/
+
+# ------------------------------------
+# Archivos de prueba
+# ------------------------------------
+*.txt
