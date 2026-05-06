@@ -144,7 +144,7 @@ class client :
                 conn, addr = listen_sock.accept()
                 # Recibimos todos los datos
                 op = client.leer_cadena(conn)
-                if (op == "SEND MESSAGE"):
+                if (op == "SEND_MESSAGE"):
                     usuario_original = client.leer_cadena(conn)
                     id_str = client.leer_cadena(conn)
                     mensaje = client.leer_cadena(conn)
@@ -154,11 +154,30 @@ class client :
                     print(f"{mensaje}")
                     print("END")
 
-                elif (op == "SEND MESS_ACK"):
+                elif (op == "SEND_MESS_ACK"):
                     id_str = client.leer_cadena(conn)
                         
                     # Imprimimos el mensaje
                     print(f"c> SEND MESSAGE {id_str} OK")
+                
+                elif (op == "SEND_MESSAGE_ATTACH"):
+                    usuario_original = client.leer_cadena(conn)
+                    id_str = client.leer_cadena(conn)
+                    mensaje = client.leer_cadena(conn)
+                    fichero = client.leer_cadena(conn)
+                        
+                    # Imprimimos el mensaje
+                    print(f"s> MESSAGE {id_str} FROM {usuario_original}")
+                    print(f"{mensaje}")
+                    print("END")
+                    print(f"FILE {fichero}")
+                
+                elif (op == "SEND_MESS_ATTACH_ACK"):
+                    id_str = client.leer_cadena(conn)
+                    fichero = client.leer_cadena(conn)
+                        
+                    # Imprimimos el mensaje
+                    print(f"c> SENDATTACH MESSAGE {id_str} {fichero} OK")
                     
                 # Cerramos la conexión de este mensaje concreto
                 conn.close()
@@ -403,7 +422,7 @@ class client :
             nombre_usuario = f"{user}\0"
             sock.sendall(nombre_usuario.encode('utf-8'))
 
-            # Enviar el mensaje
+            # Se envía el mensaje
             mensaje_str = f"{message}\0"
             sock.sendall(mensaje_str.encode('utf-8'))
 
@@ -451,8 +470,74 @@ class client :
     # * @return ERROR the user does not exist or another error occurred
     @staticmethod
     def  sendAttach(user,  file,  message) :
-        #  Write your code here
-        return client.RC.ERROR
+        # Comprobamos que este conectado ya que sino client._nombre será None y fallará
+        if client._nombre is None:
+            print("c> SENDATTACH FAIL")
+            return client.RC.ERROR
+
+        # Máximo 255 caracteres, ya que el '\0' final suma 1 byte para llegar a los 256 
+        if len(message) > 255:
+            print("c> SENDATTACH FAIL")  # El protocolo no especifica un error especial, así que usamos el general
+            return client.RC.ERROR
+
+        try:
+            # Se conecta al servidor
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((client._server, client._port))
+
+            # Se envía la cadena "SEND" indicando la operación
+            op = "SENDATTACH\0"
+            sock.sendall(op.encode('utf-8'))
+
+            # Se envía el nombre del usuario que envia el mensaje
+            nombre_usuario = f"{client._nombre}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Se envía el nombre del usuario que recibe el mensaje
+            nombre_usuario = f"{user}\0"
+            sock.sendall(nombre_usuario.encode('utf-8'))
+
+            # Se envía el mensaje
+            mensaje_str = f"{message}\0"
+            sock.sendall(mensaje_str.encode('utf-8'))
+
+            # Se envía el nombre del fichero
+            mensaje_str = f"{file}\0"
+            sock.sendall(mensaje_str.encode('utf-8'))
+
+            # Se recibe el resultado (un byte) 
+            resultado = sock.recv(1)
+
+            # Comprobamos el resultado
+            if not resultado:
+                # Cierra la conexión
+                sock.close()
+                print("c> SENDATTACH FAIL")
+                return client.RC.ERROR
+            
+            resultado = resultado[0]
+            
+            match resultado:
+                case 0:
+                    # Si es éxito, el servidor nos manda el ID del mensaje como cadena
+                    mensaje_id = client.leer_cadena(sock)
+                    print(f"c> SENDATTACH OK - MESSAGE {mensaje_id}")
+                    sock.close()
+                    return client.RC.OK
+                case 1:
+                    # Cierra la conexión
+                    sock.close()
+                    print("c> SENDATTACH FAIL, USER DOES NOT EXIST")
+                    return client.RC.USER_ERROR
+                case _:
+                    # Cierra la conexión
+                    sock.close()
+                    print("c> SENDATTACH FAIL")
+                    return client.RC.ERROR
+                
+        except Exception as e:
+            print("c> SENDATTACH FAIL")
+            return client.RC.ERROR
 
     # *
     # **

@@ -42,7 +42,7 @@ void conexion(void *arg) {
     pthread_mutex_unlock(&m);
 
     /*Variables para guardar los datos recibidos*/
-    char operacion[MAX_NAME], nombre[MAX_NAME], puerto_str[20], destinatario[MAX_NAME], mensaje[MAX_MSG];
+    char operacion[MAX_NAME], nombre[MAX_NAME], puerto_str[20], destinatario[MAX_NAME], mensaje[MAX_MSG], fichero[MAX_NAME];
     int op, puerto_int;
     ssize_t err;
     unsigned char resultado;
@@ -131,6 +131,7 @@ void conexion(void *arg) {
                 break;
                 
             case OP_SEND:
+            {
                 /*Leemos el nombre del usuario*/
                 err = readLine(my_sc,nombre,sizeof(nombre));
                 if (err <= 0) {
@@ -156,7 +157,7 @@ void conexion(void *arg) {
                 /* Preparamos los punteros necesarios*/
                 unsigned int id_asignado = 0; 
 
-                resultado = enviar_mensaje(nombre, destinatario, mensaje, &id_asignado);
+                resultado = enviar_mensaje(nombre, destinatario, mensaje, "", &id_asignado);
 
                 // Enviamos los datos al cliente
                 sendMessage(my_sc, (char *)&resultado,1);
@@ -168,8 +169,10 @@ void conexion(void *arg) {
                 }
                 
                 break;
+            }
 
             case OP_USERS:
+            {
                 /*Leemos el nombre del usuario*/
                 err = readLine(my_sc,nombre,sizeof(nombre));
                 if (err <= 0) {
@@ -210,8 +213,55 @@ void conexion(void *arg) {
                 }
                 
                 break;
+            }
 
             case OP_SENDATTACH:
+            {
+                /*Leemos el nombre del usuario*/
+                err = readLine(my_sc,nombre,sizeof(nombre));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+                /*Leemos el nombre del destinatario*/
+                err = readLine(my_sc,destinatario,sizeof(destinatario));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+                /*Leemos el mensaje*/
+                err = readLine(my_sc,mensaje,sizeof(mensaje));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+                /*Leemos el nombre del fichero*/
+                err = readLine(my_sc,fichero,sizeof(fichero));
+                if (err <= 0) {
+                    printf("Error en recepcion\n");
+                    close(my_sc);
+                    break;
+                }
+
+                /* Preparamos los punteros necesarios*/
+                unsigned int id_asignado = 0; 
+
+                resultado = enviar_mensaje(nombre, destinatario, mensaje, fichero, &id_asignado);
+
+                // Enviamos los datos al cliente
+                sendMessage(my_sc, (char *)&resultado,1);
+                if(resultado == 0){
+                    char id_str[20]; 
+                    // Convertimos id_asignado a texto y lo guardamos en id_str
+                    sprintf(id_str, "%u", id_asignado);
+                    sendMessage(my_sc, id_str,strlen(id_str) + 1);
+                }
+                
+                break;
+            }
               
             default:
                 perror("El código de operación no es válido");

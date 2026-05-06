@@ -10,6 +10,7 @@ typedef struct Nodo_mensaje {
     unsigned int id;                  // Identificador numérico del mensaje
     char remitente[MAX_NAME];         // Usuario que envía el mensaje originalmente
     char contenido[MAX_MSG];          // Texto del mensaje (máximo 256 bytes con '\0')
+    char fichero[MAX_NAME];           // Nombre del fichero adjunto
     
     struct Nodo_mensaje *next;        // Puntero al siguiente mensaje en la cola
 } nodo_mensaje;

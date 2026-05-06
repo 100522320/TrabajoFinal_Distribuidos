@@ -18,6 +18,8 @@ nodo_clientes *existe_usuario(char *nombre);
 
 int entregar_mensaje(nodo_clientes *cliente_dest, nodo_mensaje *mensaje);
 
+int entregar_mensaje_fichero(nodo_clientes *cliente_dest, nodo_mensaje *mensaje);
+
 unsigned char registrar_usuario(char *nombre);
 
 unsigned char dar_de_baja_usuario(char *nombre);
@@ -28,6 +30,6 @@ unsigned char desconectar_usuario(char *nombre, char *ip_cliente);
 
 unsigned char users(char *nombre, int *n_conectados, char **p_conectados);
 
-unsigned char enviar_mensaje(char *remitente, char *destinatario, char *contenido, unsigned int *id_asignado);
+unsigned char enviar_mensaje(char *remitente, char *destinatario, char *contenido, char *fichero, unsigned int *id_asignado);
 
 #endif

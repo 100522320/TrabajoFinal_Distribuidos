@@ -77,7 +77,7 @@ int entregar_mensaje(nodo_clientes *cliente_dest, nodo_mensaje *mensaje) {
     }
 
     // Enviamos el mensaje al destinatario siguiendo el protocolo
-    char op[] = "SEND MESSAGE\0";
+    char op[] = "SEND_MESSAGE\0";
     sendMessage(sock, op, strlen(op) + 1);
     
     char remitente[MAX_NAME + 1];
@@ -110,9 +110,85 @@ int entregar_mensaje(nodo_clientes *cliente_dest, nodo_mensaje *mensaje) {
             ack_addr.sin_addr.s_addr = inet_addr(nodo_remitente->ip);
 
             if (connect(sock_ack, (struct sockaddr *)&ack_addr, sizeof(ack_addr)) == 0) {
-                char op_ack[] = "SEND MESS_ACK\0";
+                char op_ack[] = "SEND_MESS_ACK\0";
                 sendMessage(sock_ack, op_ack, strlen(op_ack) + 1);
                 sendMessage(sock_ack, id_str, strlen(id_str) + 1);
+            } else {
+                // Si falla la conexión con el remitente, el protocolo asume que se ha desconectado
+                nodo_remitente->conectado = 0;
+                nodo_remitente->puerto = 0;
+                memset(nodo_remitente->ip, 0, MAX_IP);
+                perror("Error conectando al remitente para enviar ACK. Marcando como desconectado");
+            }
+            close(sock_ack);
+        }
+    }
+    return 0;
+}
+
+// Función auxiliar para enviar el mensaje con fichero adjunto y su correspondiente ACK por red.
+// Devuelve 0 si hubo éxito y -1 si falló la conexión al destinatario.
+int entregar_mensaje_fichero(nodo_clientes *cliente_dest, nodo_mensaje *mensaje) {
+    // Creamos un socket TCP para hablar con el hilo de escucha del cliente destino
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        perror("Error creando socket para enviar mensaje");
+        return -1;
+    }
+
+    struct sockaddr_in client_addr;
+    client_addr.sin_family = AF_INET;
+    client_addr.sin_port = htons(cliente_dest->puerto);
+    client_addr.sin_addr.s_addr = inet_addr(cliente_dest->ip);
+
+    if (connect(sock, (struct sockaddr *)&client_addr, sizeof(client_addr)) < 0) {
+        perror("Error conectando al hilo de escucha del cliente destino");
+        close(sock);
+        return -1;
+    }
+
+    // Enviamos el mensaje al destinatario siguiendo el protocolo
+    char op[] = "SEND_MESSAGE_ATTACH\0";
+    sendMessage(sock, op, strlen(op) + 1);
+    
+    char remitente[MAX_NAME + 1];
+    sprintf(remitente, "%s", mensaje->remitente);
+    sendMessage(sock, remitente, strlen(remitente) + 1);
+
+    char id_str[20];
+    sprintf(id_str, "%u", mensaje->id);
+    sendMessage(sock, id_str, strlen(id_str) + 1);
+
+    char contenido[MAX_MSG + 1];
+    sprintf(contenido, "%s", mensaje->contenido);
+    sendMessage(sock, contenido, strlen(contenido) + 1);
+
+    char fichero[MAX_NAME + 1];
+    sprintf(fichero, "%s", mensaje->fichero);
+    sendMessage(sock, fichero, strlen(fichero) + 1);
+
+    close(sock);
+
+    // Mensaje de log del servidor
+    printf("s> SEND MESSAGE %u FROM %s TO %s\n", mensaje->id, mensaje->remitente, cliente_dest->nombre);
+
+    // Buscamos al usuario que redactó el mensaje originalmente para el ACK
+    nodo_clientes *nodo_remitente = existe_usuario(mensaje->remitente);
+
+    // Solo intentamos enviar el ACK si el remitente existe y está conectado
+    if (nodo_remitente != NULL && nodo_remitente->conectado == 1) {
+        int sock_ack = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock_ack >= 0) {
+            struct sockaddr_in ack_addr;
+            ack_addr.sin_family = AF_INET;
+            ack_addr.sin_port = htons(nodo_remitente->puerto);
+            ack_addr.sin_addr.s_addr = inet_addr(nodo_remitente->ip);
+
+            if (connect(sock_ack, (struct sockaddr *)&ack_addr, sizeof(ack_addr)) == 0) {
+                char op_ack[] = "SEND_MESS_ATTACH_ACK\0";
+                sendMessage(sock_ack, op_ack, strlen(op_ack) + 1);
+                sendMessage(sock_ack, id_str, strlen(id_str) + 1);
+                sendMessage(sock_ack, fichero, strlen(fichero) + 1);
             } else {
                 // Si falla la conexión con el remitente, el protocolo asume que se ha desconectado
                 nodo_remitente->conectado = 0;
@@ -235,8 +311,14 @@ unsigned char conectar_usuario(char *nombre, int puerto_cliente, char *ip_client
     // Le mandamos todos los mensajes guardados usando la función auxiliar
     nodo_mensaje *mensaje = cliente->mensajes_pendientes;
     while(mensaje){
-        if (entregar_mensaje(cliente, mensaje) < 0) {
-            break; // Si falla la conexión de repente, paramos de enviar
+        if (strlen(mensaje->fichero) == 0) {    
+            if (entregar_mensaje(cliente, mensaje) < 0) {
+                break; // Si falla la conexión de repente, paramos de enviar
+            }
+        } else {
+            if (entregar_mensaje_fichero(cliente, mensaje) < 0) {
+                break; // Si falla la conexión de repente, paramos de enviar
+            }
         }
         
         nodo_mensaje *aux = mensaje;
@@ -356,7 +438,7 @@ unsigned char users(char *nombre, int *n_conectados, char **p_conectados){
     return 0;
 }
 
-unsigned char enviar_mensaje(char *remitente, char *destinatario, char *contenido, unsigned int *id_asignado) {
+unsigned char enviar_mensaje(char *remitente, char *destinatario, char *contenido, char *fichero, unsigned int *id_asignado) {
     pthread_mutex_lock(&mutex_lista);
 
     nodo_clientes *nodo_remitente = existe_usuario(remitente);
@@ -385,6 +467,7 @@ unsigned char enviar_mensaje(char *remitente, char *destinatario, char *contenid
     nuevo_msg->id = id_nuevo;
     strcpy(nuevo_msg->remitente, remitente);
     strcpy(nuevo_msg->contenido, contenido);
+    strcpy(nuevo_msg->fichero, fichero);
     nuevo_msg->next = NULL;
 
     // Lo almacenamos en la lista de mensajes pendientes del destinatario
@@ -400,18 +483,34 @@ unsigned char enviar_mensaje(char *remitente, char *destinatario, char *contenid
 
     // Si el destinatario está conectado, intentamos entregarlo
     if (nodo_destinatario->conectado == 1) {
-        if (entregar_mensaje(nodo_destinatario, nuevo_msg) == 0) {
-            // Se entregó con éxito, por lo que lo quitamos de la cola y lo liberamos
-            if (nodo_destinatario->mensajes_pendientes == nuevo_msg) {
-                nodo_destinatario->mensajes_pendientes = NULL;
-            } else {
-                nodo_mensaje *temp = nodo_destinatario->mensajes_pendientes;
-                while(temp->next != nuevo_msg) {
-                    temp = temp->next;
+        if (strlen(nuevo_msg->fichero) == 0) {
+            if (entregar_mensaje(nodo_destinatario, nuevo_msg) == 0) {
+                // Se entregó con éxito, por lo que lo quitamos de la cola y lo liberamos
+                if (nodo_destinatario->mensajes_pendientes == nuevo_msg) {
+                    nodo_destinatario->mensajes_pendientes = NULL;
+                } else {
+                    nodo_mensaje *temp = nodo_destinatario->mensajes_pendientes;
+                    while(temp->next != nuevo_msg) {
+                        temp = temp->next;
+                    }
+                    temp->next = NULL;
                 }
-                temp->next = NULL;
+                free(nuevo_msg);
             }
-            free(nuevo_msg);
+        } else {
+            if (entregar_mensaje_fichero(nodo_destinatario, nuevo_msg) == 0) {
+                // Se entregó con éxito, por lo que lo quitamos de la cola y lo liberamos
+                if (nodo_destinatario->mensajes_pendientes == nuevo_msg) {
+                    nodo_destinatario->mensajes_pendientes = NULL;
+                } else {
+                    nodo_mensaje *temp = nodo_destinatario->mensajes_pendientes;
+                    while(temp->next != nuevo_msg) {
+                        temp = temp->next;
+                    }
+                    temp->next = NULL;
+                }
+                free(nuevo_msg);
+            }
         }
     } 
     else {
