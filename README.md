@@ -58,4 +58,4 @@ Por cada cliente que se desee conectar, hay que ejecutar en una terminal:
 ```bash
 python3 client.py -s <ip> -p <puerto>
 ```
-Donde <ip> es la dirección IP del ordenador en el que se ejecuta el cliente y <puerto> es el puerto del servidor principal
+Donde <ip> es la dirección IP del servidor principal y <puerto> es su puerto de escucha.
