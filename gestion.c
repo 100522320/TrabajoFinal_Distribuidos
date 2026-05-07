@@ -4,6 +4,7 @@
 #include "gestion.h"
 #include "mensajes.h"
 #include "almacenamiento.h"
+#include "registro.h"
 #include <stdlib.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -16,6 +17,35 @@
 nodo_clientes *head = NULL;
 // Definición del mutex para proteger la lista enlazada
 pthread_mutex_t mutex_lista = PTHREAD_MUTEX_INITIALIZER;
+
+void registrar_operacion(char *operacion, char *usuario, char *fichero){
+    /*Esta función es la encargada de crear el cliente rpc para llamar al procedimiento remoto IMPRIMIR*/
+    CLIENT *clnt;
+    enum clnt_stat retval;
+    void *result;
+
+    char *host = getenv("LOG_RPC_IP");
+    if (host == NULL) {
+        printf("Error en el registro: Variable de entorno LOG_RPC_IP no definida.\n");
+        return;
+    }
+
+    // Conectamos por TCP al servidor RPC
+    clnt = clnt_create(host, REGISTRO_PROG, REGISTRO_VERS, "tcp");
+    
+    if (clnt == NULL) {
+        clnt_pcreateerror(host);
+        return;
+    }
+
+    retval = imprimir_1(operacion, usuario, fichero, &result, clnt);
+
+    if (retval != RPC_SUCCESS) {
+        clnt_perror(clnt, "Fallo en la llamada RPC");
+    }
+
+    clnt_destroy(clnt);
+}
 
 int op_a_int(char *operacion){
     /*Cogemos la operacion recibida y la comparamos con las distintas opciones 

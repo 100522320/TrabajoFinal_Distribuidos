@@ -12,6 +12,8 @@
 #define OP_SENDATTACH  6
 
 
+void registrar_operacion(char *operacion, char *usuario, char *fichero);
+
 int op_a_int(char *operacion);
 
 nodo_clientes *existe_usuario(char *nombre);

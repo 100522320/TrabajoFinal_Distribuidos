@@ -1,30 +1,45 @@
-# Compilador a utilizar
+# Compilador y opciones
 CC = gcc
+CFLAGS = -Wall -Wextra -g -pthread -I/usr/include/tirpc
+LDLIBS = -lnsl -lpthread -ldl -ltirpc
 
-# Opciones de compilación: 
-CFLAGS = -Wall -Wextra -g -pthread
+# Nombres de los ejecutables finales
+TARGET_CHAT = server
+TARGET_RPC = registro_server
 
-# Nombre del ejecutable final
-TARGET = server
+# Archivos generados por rpcgen
+RPC_STUBS = registro_clnt.c registro_svc.c registro_xdr.c
+RPC_HDR = registro.h
 
-# Archivos objeto requeridos
-OBJS = servidor.o gestion.o mensajes.o
+# Objetos separados para cada programa
+# El chat es el cliente RPC
+OBJS_CHAT = servidor.o gestion.o mensajes.o registro_clnt.o registro_xdr.o
+# El registro es el servidor RPC
+OBJS_RPC = registro_server.o registro_svc.o registro_xdr.o
 
-# Cabeceras (Para que Make sepa que si cambian, hay que recompilar)
-HEADERS = almacenamiento.h gestion.h mensajes.h
+# Cabeceras locales
+HEADERS = almacenamiento.h gestion.h mensajes.h $(RPC_HDR)
 
-# Regla principal
-all: $(TARGET)
+# --- REGLAS ---
 
-# Regla para enlazar el ejecutable final
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+all: $(TARGET_CHAT) $(TARGET_RPC)
 
-# Regla genérica para compilar archivos .c a .o
-# Al poner $(HEADERS) aquí, le decimos a make que todos los .o dependen de los .h
+# 1. Enlazar el servidor de chat
+$(TARGET_CHAT): $(OBJS_CHAT)
+	$(CC) $(CFLAGS) -o $(TARGET_CHAT) $(OBJS_CHAT) $(LDLIBS)
+
+# 2. Enlazar el servidor de logs (RPC)
+$(TARGET_RPC): $(OBJS_RPC)
+	$(CC) $(CFLAGS) -o $(TARGET_RPC) $(OBJS_RPC) $(LDLIBS)
+
+# 3. Generar los archivos RPC a partir del .x
+$(RPC_HDR) $(RPC_STUBS): registro.x
+	rpcgen -N -M registro.x
+
+# 4. Regla genérica para compilar archivos .c a .o
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Regla para limpiar los archivos generados
+# 5. Limpieza total: borra objetos, los dos ejecutables y los stubs
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o $(TARGET_CHAT) $(TARGET_RPC) $(RPC_HDR) $(RPC_STUBS)

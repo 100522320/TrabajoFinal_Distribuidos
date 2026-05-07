@@ -1,14 +1,19 @@
 # ------------------------------------
-# C / Makefile (Servidor)
+# C / Makefile (Servidor y RPC)
 # ------------------------------------
 # Archivos objeto compilados
 *.o
 
-# Ejecutable final generado por el Makefile
+# Ejecutables finales generados por el Makefile
 server
+registro_server
+
+# Ejecutables genéricos (por si compilas a mano o en Windows)
+*.out
+*.exe
 
 # ------------------------------------
-# Python (Cliente)
+# Python (Cliente y Web Service)
 # ------------------------------------
 # Archivos de caché compilados de Python
 __pycache__/
@@ -23,19 +28,16 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Archivos de configuración de VSCode (opcional, bórralo si quieres subir tus settings)
+# Archivos de configuración de VSCode (opcional)
 .vscode/
 
 # ------------------------------------
-# Archivos de prueba
+# Archivos de prueba y Entornos
 # ------------------------------------
 *.txt
-
-# ------------------------------------
-# Entorno virtual
-# ------------------------------------
-*.venv
-
-
-
 *prueba.py
+
+# Carpetas de entorno virtual (corregido con la barra diagonal)
+.venv/
+venv/
+env/

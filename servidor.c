@@ -78,6 +78,8 @@ void conexion(void *arg) {
                     break;
                 }
 
+                registrar_operacion(operacion, nombre, "");
+
                 resultado = registrar_usuario(nombre);
                 sendMessage(my_sc, (char *)&resultado,1);
                 break;
@@ -91,6 +93,8 @@ void conexion(void *arg) {
                     break;
                 }
 
+                registrar_operacion(operacion, nombre, "");
+
                 resultado = dar_de_baja_usuario(nombre);
                 sendMessage(my_sc, (char *)&resultado,1);
                 break;
@@ -103,6 +107,8 @@ void conexion(void *arg) {
                     close(my_sc);
                     break;
                 }
+
+                registrar_operacion(operacion, nombre, "");
 
                 /*Leemos el puerto del usuario*/
                 err = readLine(my_sc,puerto_str,sizeof(puerto_str));
@@ -126,6 +132,8 @@ void conexion(void *arg) {
                     break;
                 }
 
+                registrar_operacion(operacion, nombre, "");
+
                 resultado = desconectar_usuario(nombre,ip_cliente);
                 sendMessage(my_sc, (char *)&resultado,1);
                 break;
@@ -139,6 +147,9 @@ void conexion(void *arg) {
                     close(my_sc);
                     break;
                 }
+
+                registrar_operacion(operacion, nombre, "");
+
                 /*Leemos el nombre del destinatario*/
                 err = readLine(my_sc,destinatario,sizeof(destinatario));
                 if (err <= 0) {
@@ -146,6 +157,7 @@ void conexion(void *arg) {
                     close(my_sc);
                     break;
                 }
+
                 /*Leemos el mensaje*/
                 err = readLine(my_sc,mensaje,sizeof(mensaje));
                 if (err <= 0) {
@@ -180,6 +192,8 @@ void conexion(void *arg) {
                     close(my_sc);
                     break;
                 }
+
+                registrar_operacion(operacion, nombre, "");
 
                 /* Preparamos los punteros necesarios*/
                 int n_conectados = 0;           // El numero de usuarios conectados
@@ -245,6 +259,8 @@ void conexion(void *arg) {
                     close(my_sc);
                     break;
                 }
+
+                registrar_operacion(operacion, nombre, fichero);
 
                 /* Preparamos los punteros necesarios*/
                 unsigned int id_asignado = 0; 
