@@ -152,17 +152,14 @@ class client :
                     mensaje = client.leer_cadena(conn)
                         
                     # Imprimimos el mensaje
-                    print(f"\ns> MESSAGE {id_str} FROM {usuario_original}")
-                    print(f"{mensaje}")
-                    print("END")
-                    print("c> ", end="")
+                    print(f"\ns> MESSAGE {id_str} FROM {usuario_original}\n{mensaje}\nEND\nc> ", end="")
 
                 elif (op == "SEND_MESS_ACK"):
                     id_str = client.leer_cadena(conn)
                         
                     # Imprimimos el mensaje
                     print(f"\nc> SEND MESSAGE {id_str} OK")
-                    print("c> ", end="")
+                    print("c> ", end="", flush=True)
                 
                 elif (op == "SEND_MESSAGE_ATTACH"):
                     usuario_original = client.leer_cadena(conn)
@@ -171,11 +168,7 @@ class client :
                     fichero = client.leer_cadena(conn)
                         
                     # Imprimimos el mensaje
-                    print(f"\ns> MESSAGE {id_str} FROM {usuario_original}")
-                    print(f"{mensaje}")
-                    print("END")
-                    print(f"FILE {fichero}")
-                    print("c> ", end="")
+                    print(f"\ns> MESSAGE {id_str} FROM {usuario_original}\n{mensaje}\nEND\nFILE {fichero}\nc> ", end="")
                 
                 elif (op == "SEND_MESS_ATTACH_ACK"):
                     id_str = client.leer_cadena(conn)
@@ -183,7 +176,7 @@ class client :
                         
                     # Imprimimos el mensaje
                     print(f"\nc> SENDATTACH MESSAGE {id_str} {fichero} OK")
-                    print("c> ", end="")
+                    print("c> ", end="", flush=True)
                 
                 elif (op == "GET_FILE"):
                     # Leemos los dos campos que nos manda el que pide el archivo
@@ -260,7 +253,7 @@ class client :
                 case 0:
                     # Guardamos quién somos para que USERS funcione después
                     client._nombre = user
-                    print("c> CONNECT OK")
+                    print("\nc> CONNECT OK")
                     return client.RC.OK
                 case 1:
                     print("c> CONNECT FAIL, USER DOES NOT EXIST")
@@ -528,9 +521,12 @@ class client :
             sock.sendall(nombre_usuario.encode('utf-8'))
 
             # Se envía el mensaje llamando primero a la función del servicio web para limpiar espacios innecesarios
-            wsdl = "http://127.0.0.1:8000/?wsdl"
-            soap_client = zeep.Client(wsdl=wsdl)
-            message = soap_client.service.limpiarEspacios(message)
+            try:
+                wsdl = "http://127.0.0.1:8000/?wsdl"
+                soap_client = zeep.Client(wsdl=wsdl)
+                message = soap_client.service.limpiarEspacios(message)
+            except Exception as e:
+                print("Error en la llamada al servicio web")
             
             mensaje_str = f"{message}\0"
             sock.sendall(mensaje_str.encode('utf-8'))

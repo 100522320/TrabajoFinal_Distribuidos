@@ -1,7 +1,7 @@
 # Compilador y opciones
 CC = gcc
 CFLAGS = -Wall -Wextra -g -pthread -I/usr/include/tirpc
-LDLIBS = -lnsl -lpthread -ldl -ltirpc
+LDLIBS = -lpthread -ldl -ltirpc
 
 # Nombres de los ejecutables finales
 TARGET_CHAT = server
