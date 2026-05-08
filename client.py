@@ -152,15 +152,17 @@ class client :
                     mensaje = client.leer_cadena(conn)
                         
                     # Imprimimos el mensaje
-                    print(f"s> MESSAGE {id_str} FROM {usuario_original}")
+                    print(f"\ns> MESSAGE {id_str} FROM {usuario_original}")
                     print(f"{mensaje}")
                     print("END")
+                    print("c> ", end="")
 
                 elif (op == "SEND_MESS_ACK"):
                     id_str = client.leer_cadena(conn)
                         
                     # Imprimimos el mensaje
-                    print(f"c> SEND MESSAGE {id_str} OK")
+                    print(f"\nc> SEND MESSAGE {id_str} OK")
+                    print("c> ", end="")
                 
                 elif (op == "SEND_MESSAGE_ATTACH"):
                     usuario_original = client.leer_cadena(conn)
@@ -169,17 +171,19 @@ class client :
                     fichero = client.leer_cadena(conn)
                         
                     # Imprimimos el mensaje
-                    print(f"s> MESSAGE {id_str} FROM {usuario_original}")
+                    print(f"\ns> MESSAGE {id_str} FROM {usuario_original}")
                     print(f"{mensaje}")
                     print("END")
                     print(f"FILE {fichero}")
+                    print("c> ", end="")
                 
                 elif (op == "SEND_MESS_ATTACH_ACK"):
                     id_str = client.leer_cadena(conn)
                     fichero = client.leer_cadena(conn)
                         
                     # Imprimimos el mensaje
-                    print(f"c> SENDATTACH MESSAGE {id_str} {fichero} OK")
+                    print(f"\nc> SENDATTACH MESSAGE {id_str} {fichero} OK")
+                    print("c> ", end="")
                 
                 elif (op == "GET_FILE"):
                     # Leemos los dos campos que nos manda el que pide el archivo
