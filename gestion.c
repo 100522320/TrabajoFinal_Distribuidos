@@ -295,7 +295,7 @@ unsigned char dar_de_baja_usuario(char *nombre){
         cliente->next->before = cliente->before;
     }
     
-    /*Necesitamos borra tambien los mensajes pendientes de recibirs*/
+    /*Necesitamos borra tambien los mensajes pendientes de recibirse*/
     nodo_mensaje *msg_actual = cliente->mensajes_pendientes;
     while (msg_actual != NULL) {
         nodo_mensaje *aux = msg_actual;
