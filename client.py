@@ -3,6 +3,7 @@ import argparse
 import socket
 import threading
 import zeep
+import time
 
 class client :
 
@@ -150,12 +151,18 @@ class client :
                     usuario_original = client.leer_cadena(conn)
                     id_str = client.leer_cadena(conn)
                     mensaje = client.leer_cadena(conn)
+
+                    # Dejamos tiempo para que se ejecute el input del shell
+                    time.sleep(0.05)
                         
                     # Imprimimos el mensaje
                     print(f"\ns> MESSAGE {id_str} FROM {usuario_original}\n{mensaje}\nEND\nc> ", end="")
 
                 elif (op == "SEND_MESS_ACK"):
                     id_str = client.leer_cadena(conn)
+
+                    # Dejamos tiempo para que se ejecute el input del shell
+                    time.sleep(0.05)
                         
                     # Imprimimos el mensaje
                     print(f"\nc> SEND MESSAGE {id_str} OK")
@@ -166,6 +173,9 @@ class client :
                     id_str = client.leer_cadena(conn)
                     mensaje = client.leer_cadena(conn)
                     fichero = client.leer_cadena(conn)
+
+                    # Dejamos tiempo para que se ejecute el input del shell
+                    time.sleep(0.05)
                         
                     # Imprimimos el mensaje
                     print(f"\ns> MESSAGE {id_str} FROM {usuario_original}\n{mensaje}\nEND\nFILE {fichero}\nc> ", end="")
@@ -173,6 +183,9 @@ class client :
                 elif (op == "SEND_MESS_ATTACH_ACK"):
                     id_str = client.leer_cadena(conn)
                     fichero = client.leer_cadena(conn)
+
+                    # Dejamos tiempo para que se ejecute el input del shell
+                    time.sleep(0.05)
                         
                     # Imprimimos el mensaje
                     print(f"\nc> SENDATTACH MESSAGE {id_str} {fichero} OK")
