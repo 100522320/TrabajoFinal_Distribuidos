@@ -34,7 +34,6 @@ Thumbs.db
 # ------------------------------------
 # Archivos de prueba y Entornos
 # ------------------------------------
-*.txt
 *prueba.py
 
 # Carpetas de entorno virtual (corregido con la barra diagonal)
