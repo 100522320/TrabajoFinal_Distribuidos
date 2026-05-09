@@ -2,7 +2,7 @@
 
 ## 1. Requisitos e Instalación de Dependencias
 
-Es necesario disponer de `gcc`, `make`, `rpcgen` y las cabeceras de `tirpc`. Estas últimas pueden ser instaladas ejecutando en la terminal de Linux:
+Es necesario disponer de `gcc`, `make` y las cabeceras de `tirpc`. Estas últimas pueden ser instaladas ejecutando en la terminal de Linux:
 ```bash
 sudo apt-get install build-essential libc6-dev libtirpc-dev
 ```
@@ -18,8 +18,7 @@ Para compilar la parte de servidor de la app, basta con ejecutar el siguiente co
 ```bash
 make
 ```
-Este comando automatiza, mediante un archivo Makefile, la generación de los stubs de red y archivos de cabecera de rpc a partir de registro.x, 
-la generación del ejecutable del servidor principal de la app (server) y la generación del ejecutable del servidor rpc de registro (registro_server).
+Este comando automatiza, mediante un archivo Makefile, la generación del ejecutable del servidor principal de la app (server) y la generación del ejecutable del servidor rpc de registro (registro_server).
 
 Para realizar una limpieza de los archivos temporales y binarios:
 ```bash
